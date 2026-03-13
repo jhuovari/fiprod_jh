@@ -631,7 +631,7 @@ dat_gva_ind|>
   filter_recode(
     measure = c("GVAHRS"),
     activity = c("Total economy" = "_T", "Private" = "BTNXL", "Public-type" = "OTQ"),
-    vars = c(Exchange rate = "fp_2020_xr17", PPP = "fp_2020_ppp17")
+    vars = c("Exchange rate" = "fp_2020_xr17", "PPP" = "fp_2020_ppp17")
   ) |> 
   # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
   filter_recode(
@@ -661,7 +661,7 @@ dat_gva_ind|>
   filter_recode(
     measure = c("GVAHRS"),
     activity = c("Real estate" = "L", "Other services" = "RTU"),
-    vars = c(Exchange rate = "fp_2020_xr17", PPP = "fp_2020_ppp17")
+    vars = c("Exchange rate" = "fp_2020_xr17", "PPP" = "fp_2020_ppp17")
   ) |> 
   # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
   filter_recode(
@@ -721,7 +721,38 @@ dat_gva_ind|>
   filter_recode(
     measure = c("GVAHRS"),
     activity = c("Industry" = "BTE", "Construction" = "F", "Private services" = "GTNXL"),
-    vars = c(Exchange rate = "fp_2020_xr17", PPP = "fp_2020_ppp17")
+    vars = c("Exchange rate" = "fp_2020_xr17", "PPP" = "fp_2020_ppp17")
+  ) |> 
+  # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  # scale_y_continuous(limits = c(50, 150)) +
+  facet_grid(vars ~ activity) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Value added / hours worked",
+    subtitle = "2017 $, PPP-adjusted",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) 
+
+```
+
+```{r}
+#| fig-width: 7
+#| fig-height: 7
+
+dat_gva_ind|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Industry" = "BTE", "Private services" = "GTNXL"),
+    vars = c("Exchange rate" = "fp_2020_xr17", "PPP" = "fp_2020_ppp17")
   ) |> 
   # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
   filter_recode(

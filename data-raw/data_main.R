@@ -27,6 +27,8 @@ dat_oecd_pdb_ind <- load_dat("dat_oecd_pdb_ind")
 
 dat_ggdc_23 <- load_dat("dat_ggdc_23")
 
+dat_ppp_va_ggdc_oecd <- load_dat("dat_ppp_va_ggdc_oecd")
+
 dat_gva_ind <-
   dat_oecd_pdb_ind |>
   select(-unit_measure, -conversion_type) |>
