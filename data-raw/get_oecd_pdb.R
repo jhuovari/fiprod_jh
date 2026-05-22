@@ -5,7 +5,7 @@ library(countrycode)
 library(OECD)
 
 
-geos_oecd <- c("EA20", countrycode(c("FI", "SE", "NO", "DK", "BE", "NL", "AT", "PT", "DE", "IT", "FR", "ES", "US", "JP"), "eurostat", "iso3c"))
+geos_oecd <- c("EA20", countrycode(c("FI", "SE", "NO", "DK", "BE", "NL", "AT", "PT", "DE", "IT", "FR", "ES", "US", "JP", "UK"), "eurostat", "iso3c"))
 
 pdb_dataset <- "OECD.SDD.TPS,DSD_PDB@DF_PDB,"
 

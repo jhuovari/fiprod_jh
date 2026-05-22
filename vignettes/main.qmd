@@ -95,7 +95,7 @@ dat_oecd_pdb_main |>
   
 ```
 
-## Kasvu jaettuna tuottavuuteen ja työtunteihin
+## BKT:n kasvu jaettuna työn tuottavuuteen ja työtunteihin koko taloudessa
 
 ```{r}
 
@@ -125,7 +125,10 @@ dat_oecd_pdb_main |>
   )
 ```
 
-## Työn tuottavuuden kasvu yksityisellä sektorilla ja muualla
+## Työn tuottavuuden kasvu koko taloudessa ja yrityssektorilla
+
+Yrityssektorilla viittaan tässä toimialoihin B-N pl. L. Niillä tuottavuuden mittaaminen
+on vähemmän ongelmallista kuin pois jätetyillä toimialoilla.
 
 ```{r}
 
@@ -156,7 +159,10 @@ dat_gva_ind |>
   )
 ```
 
-### Muut kuin yksityisen sektorin toimialat
+### Muut kuin yrityssektorin toimialat
+
+Näillä toimialoilla on monia tuottavuuden mittaamiseen liityviä ongelmia. 
+Kts. esim. Tuottavuuslautakunta (2019).
 
 ```{r}
 
@@ -164,7 +170,7 @@ dat_gva_ind |>
   filter(time >= "1995-01-01") |> 
   filter_recode(
     measure = c("GVAHRS"),
-    activity = c("Kiinteistöala" = "L", "Julkinen" = "OTQ", "Muut palvelut" = "RTU"),
+    activity = c("A" = "Alkutuotanto", "Kiinteistöala" = "L", "Julkinen" = "OTQ", "Muut palvelut" = "RTU"),
     vars = c("fp_2020_ppp17")
   ) |> 
   mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
@@ -187,7 +193,7 @@ dat_gva_ind |>
   )
 ```
 
-### Yksityinen sektori jaettuna
+### Yrityssektori jaettuna
 
 ```{r}
 
@@ -233,7 +239,7 @@ dat_gva_ind |>
   mutate(values = 100 * values / values[activity == "_T"] , .by = !c(activity, values)) |> 
   filter_recode(
     geo = geos,
-    activity = c("Yksityinen sektori" = "BTNXL", "Kiinteistöala" = "L", "Julkinen" = "OTQ", "Muut palvelut" = "RTU")) |> 
+    activity = c("Yrityssektori" = "BTNXL", "Kiinteistöala" = "L", "Julkinen" = "OTQ", "Muut palvelut" = "RTU")) |> 
   ggplot(aes(time, values, colour = activity)) +
   facet_wrap(~ geo, nrow = 1) +
   geom_line() +
@@ -621,6 +627,43 @@ bind_rows(dat1, dat2) |>
        subtitle = "Mrd. PPP dollaria 2020 tai 2017 hinnoin")
 
 ```
+
+## Työn tuottavuuden tasot toimialoilla
+
+### Yrityssektori
+
+```{r}
+
+
+dat_gva_ind|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Yksityinen" = "BTNXL"),
+    vars = c(PPP = "fp_2020_ppp17")
+  ) |> 
+  # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  # scale_y_continuous(limits = c(50, 150)) +
+  # facet_grid(vars ~ activity) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = seq.int(10, 200, 10)) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Arvonlisä / työtunnit",
+    subtitle = "Vuoden 2017 $, ostovoimakorjattuna, logaritminen asteikko",
+    caption = "Lähde: OECD, GGDC, Tuottavuuslautakunta"
+  )
+
+```
+
+### Vertailus ostovoimakorjattu ja valuuttakurssi
 
 ```{r}
 #| fig-width: 7

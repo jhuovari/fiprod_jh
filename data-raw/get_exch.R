@@ -2,7 +2,7 @@
 
 library(eurostat)
 
-currencies <- c(AU = "AUD", CA = "CAD", US = "USD", JP = "JPY", NZ = "NZD", CH = "CHF", DK = "DKK", SE = "SEK", NO = "NOK")
+currencies <- c(AU = "AUD", CA = "CAD", US = "USD", JP = "JPY", NZ = "NZD", CH = "CHF", DK = "DKK", SE = "SEK", NO = "NOK", UK = "GBP")
 
 exh_eur_euro <-
   list(time = 1971:lubridate::year(Sys.time()),

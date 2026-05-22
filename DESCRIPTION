@@ -33,6 +33,7 @@ Imports:
 Remotes: 
     jhuovari/pxwebtools,
     jhuovari/ggcustom
+    pttry/pxwebtools
 Config/testthat/edition: 3
 Depends: 
     R (>= 3.5)
