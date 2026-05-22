@@ -674,7 +674,7 @@ dat_gva_ind|>
   the_title_blank("xyl") +
   labs(
     title = "Arvonlisä / työtunnit",
-    subtitle = "Vuoden 2017 $, ostovoimakorjattuna, logaritminen asteikko",
+    subtitle = "Vuoden 2017 $, ostovoimakorjattuna, logaritminen asteikko, log-asteikko",
     caption = "Lähde: OECD, GGDC, Tuottavuuslautakunta"
   )
 
