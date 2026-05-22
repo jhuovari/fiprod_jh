@@ -28,6 +28,8 @@ library(pttdatahaku)
 
 set_gg(theme_fpb())
 
+y_log_breaks <- scales::breaks_pretty(n = 8)
+
 
 dat_oecd_pdb_main <- load_dat("dat_oecd_pdb_main") 
 
@@ -86,6 +88,7 @@ dat_oecd_pdb_main |>
   scale_colour_manual(values = geos_colour) +
   guides(colour = guide_legend(reverse = TRUE), 
          linewidth = guide_legend(reverse = TRUE)) +
+  scale_y_log10(breaks = y_log_breaks) +
   the_title_blank("xyl") +
   labs(
     title = "BKT per capita",
@@ -116,6 +119,7 @@ dat_oecd_pdb_main |>
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -136,7 +140,7 @@ dat_gva_ind |>
   filter(time >= "1995-01-01") |> 
   filter_recode(
     measure = c("GVAHRS"),
-    activity = c("Koko talous" = "_T", "Yksityinen sektori" = "BTNXL"),
+    activity = c("Koko talous" = "_T", "Yrityssektori" = "BTNXL"),
     vars = c("fp_2020_ppp17")
   ) |> 
   mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
@@ -150,6 +154,7 @@ dat_gva_ind |>
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -184,6 +189,7 @@ dat_gva_ind |>
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -211,7 +217,7 @@ dat_gva_ind|>
   ) |> 
 
   ggplot(aes(time, values, colour = geo, linewidth = geo)) +
-  scale_y_continuous(limits = c(50, 150)) +
+  scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
   facet_wrap(~ activity) +
   geom_line() +
   scale_colour_manual(values = geos_colour) +
@@ -244,6 +250,7 @@ dat_gva_ind |>
   facet_wrap(~ geo, nrow = 1) +
   geom_line() +
   scale_x_date(date_labels = "%y") +
+  scale_y_log10(breaks = y_log_breaks) +
   the_title_blank("xyl") +
   labs(
     title = "Osuus arvonlisäyksestä",
@@ -276,6 +283,7 @@ dat_gva_ind |>
   facet_wrap(~ geo, nrow = 1) +
   geom_line() +
   scale_x_date(date_labels = "%y") +
+  scale_y_log10(breaks = y_log_breaks) +
   the_title_blank("xyl") +
   labs(
     title = "Osuus arvonlisäyksestä",
@@ -314,6 +322,7 @@ activity = c("Teollisuus" = "BTE", "Rakentaminen" = "F","Yksityiset palvelut" = 
   facet_wrap(~ geo, nrow = 1) +
   geom_line() +
   scale_x_date(date_labels = "%y") +
+  scale_y_log10(breaks = y_log_breaks) +
   the_title_blank("xyl") +
   labs(
     title = "Osuus työtunneista",
@@ -345,6 +354,7 @@ dat_oecd_pdb_main |>
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -388,6 +398,7 @@ dat_oecd_pdb_main |>
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -428,6 +439,7 @@ dat_oecd_pdb_main |>
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -464,6 +476,7 @@ dat_oecd_pdb_main |>
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -507,6 +520,7 @@ dat_oecd_pdb_main |>
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -533,6 +547,7 @@ dat_oecd_pdb_main |>
   ggplot(aes(time, values, colour = measure)) +
   facet_wrap(~geo, scales = "free") +
   geom_line() +
+  scale_y_log10(breaks = y_log_breaks) +
   the_title_blank("xyl") +
   labs(
     title = "BKT ja arvonlisä",
@@ -555,7 +570,7 @@ dat_oecd_pdb_main |>
   filter(time >= "1995-01-01") |> 
   filter_recode(
     measure = c("GVAHRS"),
-    activity = c("Koko talous" = "_T", "Yksityinen" = "BTNXL"),
+    activity = c("Koko talous" = "_T", "Yrityssektori" = "BTNXL"),
     price_base = c("LR"),        # 
     conversion_type = c("_Z")
   ) |> 
@@ -570,6 +585,7 @@ dat_oecd_pdb_main |>
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -621,6 +637,7 @@ bind_rows(dat1, dat2) |>
   ggplot(aes(time, values, colour = ppp_source)) +
   facet_wrap(~geo, scales = "free") +
   geom_line() +
+  scale_y_log10(breaks = y_log_breaks) +
   the_title_blank("xyl") +
   the_legend_bot() +
   labs(title = "Bruttoarvonlisä koko taloudessa",
@@ -639,7 +656,7 @@ dat_gva_ind|>
   filter(time >= "1995-01-01") |> 
   filter_recode(
     measure = c("GVAHRS"),
-    activity = c("Yksityinen" = "BTNXL"),
+    activity = c("Yrityssektori" = "BTNXL"),
     vars = c(PPP = "fp_2020_ppp17")
   ) |> 
   # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
@@ -647,7 +664,7 @@ dat_gva_ind|>
     geo = geos
   ) |> 
   ggplot(aes(time, values, colour = geo, linewidth = geo)) +
-  # scale_y_continuous(limits = c(50, 150)) +
+  # scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
   # facet_grid(vars ~ activity) +
   geom_line() +
   scale_colour_manual(values = geos_colour) +
@@ -673,7 +690,7 @@ dat_gva_ind|>
   filter(time >= "1995-01-01") |> 
   filter_recode(
     measure = c("GVAHRS"),
-    activity = c("Koko talous" = "_T", "Yksityinen" = "BTNXL", "Julkisluonteinen" = "OTQ"),
+    activity = c("Koko talous" = "_T", "Yrityssektori" = "BTNXL", "Julkisluonteinen" = "OTQ"),
     vars = c(Valuuttakurssi = "fp_2020_xr17", PPP = "fp_2020_ppp17")
   ) |> 
   # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
@@ -681,11 +698,12 @@ dat_gva_ind|>
     geo = geos
   ) |> 
   ggplot(aes(time, values, colour = geo, linewidth = geo)) +
-  # scale_y_continuous(limits = c(50, 150)) +
+  # scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
   facet_grid(vars ~ activity) +
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -711,11 +729,12 @@ dat_gva_ind|>
     geo = geos
   ) |> 
   ggplot(aes(time, values, colour = geo, linewidth = geo)) +
-  # scale_y_continuous(limits = c(50, 150)) +
+  # scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
   facet_wrap(vars ~ activity, scales = "free") +
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -740,11 +759,12 @@ dat_gva_ind|>
     geo = geos
   ) |> 
   ggplot(aes(time, values, colour = geo, linewidth = geo)) +
-  # scale_y_continuous(limits = c(50, 150)) +
+  # scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
   facet_wrap(~ activity) +
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
@@ -771,11 +791,12 @@ dat_gva_ind|>
     geo = geos
   ) |> 
   ggplot(aes(time, values, colour = geo, linewidth = geo)) +
-  # scale_y_continuous(limits = c(50, 150)) +
+  # scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
   facet_grid(vars ~ activity) +
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl") +
   labs(
