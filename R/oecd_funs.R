@@ -25,7 +25,20 @@ utils::globalVariables(c(
 #' cleaned <- oecd_clean_data(smdx_data, vars = vars, freq = "A")
 #' }
 #' @export
-oecd_clean_data <- function(df, drop_vars = NULL, vars = c(), freq = "A") {
+oecd_clean_data <- function(df = NULL, sdmx_obj = NULL, drop_vars = NULL, vars = c(), freq = "A") {
+
+
+  # Backward compatibility: allow passing an SDMX object via `sdmx_obj`
+  if (!is.null(sdmx_obj)) {
+    if (!is.null(df)) {
+      warning("Both `df` and `sdmx_obj` were supplied; using `sdmx_obj`.")
+    }
+    df <- as.data.frame(sdmx_obj)
+  }
+
+  if (is.null(df)) {
+    stop("Provide either `df` or `sdmx_obj`.")
+  }
 
   # Validate 'vars' is named (or empty)
   if (length(vars) > 0) {
