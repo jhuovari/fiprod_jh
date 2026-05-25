@@ -42,7 +42,7 @@ check_factor_levels <- function(df, drop_vars = character()) {
 
   # Select factor variables, excluding drop_vars
   factor_vars0 <- names(df)[vapply(df, is.factor, logical(1))]
-  factor_vars <- setdiff(factor_vars, drop_vars)
+  factor_vars <- setdiff(factor_vars0, drop_vars)
 
   if (length(factor_vars) == 0) {
     warning("No factor variables to tabulate after applying drop_vars.")
