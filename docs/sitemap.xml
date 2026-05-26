@@ -1,20 +1,32 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/404.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/articles/competitiveness.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/articles/ggdc.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/articles/index.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/articles/main.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/articles/main_en.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/articles/public.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/authors.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/index.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/LICENSE-text.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/LICENSE.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/check_factor_levels.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/convert_currency.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/geo_names.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/index.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/load_dat.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/oecd_clean_data.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/oecd_make_filter.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/plotly_hidden.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/plotly_prefade_others.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/read_ecfin_weights.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/read_ecf_w_file.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/rebase_index.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/relative_to_peer_geom_mean.html</loc></url>
 <url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/save_dat.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/weighted_gmean.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/weight_all.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/weight_function.html</loc></url>
+<url><loc>https://tuottavuuslautakunta.github.io/fiprod/reference/weight_index.html</loc></url>
 </urlset>
 

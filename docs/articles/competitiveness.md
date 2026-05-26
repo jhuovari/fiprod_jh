@@ -1,0 +1,286 @@
+# Kustannuskilpailukyky
+
+KESKEN
+
+Päivitetty: 2026-05-26
+
+Näytä koodi
+
+``` r
+# library(fiprod)
+
+if (interactive()) devtools::load_all(".") else library(fiprod) 
+
+library(tidyverse)
+library(ggcustom)
+library(pttdatahaku)
+
+
+set_gg(theme_fpb())
+
+lang <- "fi"
+
+dat_oecd_pdb_ulc <- load_dat("dat_oecd_pdb_ulc")
+dat_oecd_ulcq <- load_dat("dat_oecd_ulcq")
+
+
+geos <- rev(c(
+  "Suomi"         = "FI",
+  "Euroalue"      = "EA20",
+  "Ruotsi"        = "SE",
+  "Tanska"        = "DK",
+  "Saksa"         = "DE",
+  "USA"           = "US",
+  "muut"          = "Other"
+))
+
+geos_width <- set_names(if_else(geos %in% c("FI"), 2, 1.3), names(geos))
+geos_colour <- set_names(c("grey80", rev(ggcustom_pal(length(geos) -1, "fpb"))), names(geos)) # muut luokalle harmaa
+
+time_range <- 2000:max(dat_oecd_pdb_ulc$time)
+
+library(pxwebtools)
+# pxw_print_code_full_query_c("https://pxdata.stat.fi/PxWeb/pxweb/fi/StatFin/StatFin__vtp/statfin_vtp_pxt_11yx.px")
+
+dat_statfin_vtp_pxt_11yx_px <- pxw_get_data(
+  url = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vtp/statfin_vtp_pxt_11yx.px",
+  query = 
+    list("Sektori"=c("S2"),
+       "Taloustoimi"=c("B11", "B9"),
+       "Vuosi"=c("*"),
+       "Tiedot"=c("bkt_suhde")))
+```
+
+Näytä koodi
+
+``` r
+dat_oecd_pdb_ulc |> 
+  filter(
+    time >= time_range[1],
+         geo %in% c("FI", "US", "JP")) |> 
+  filter_recode(
+    measure = c("ULCE", "ULCH"),
+    unit_measure = "IX"
+  ) |> 
+  select(-unit_measure) |> 
+  mutate(values = rebase_index(values, time, time_range), .by = c(geo, measure)) |>
+  ggplot(aes(time, values, colour = geo)) +
+  facet_wrap(~measure) +
+  geom_line() +
+  scale_linewidth_manual(values = geos_width) +
+  the_title_blank("xyl") +
+  labs(
+    title = "BKT per capita",
+    subtitle = "Indeksi, 2007 = 100",
+    caption = "Lähde: OECD, Tuottavuuslautakunta"
+  )
+```
+
+![](competitiveness_files/figure-html/unnamed-chunk-1-1.png)
+
+Näytä koodi
+
+``` r
+dat_oecd_pdb_ulc |> 
+  filter(
+    time >= "1995-01-01",
+         geo %in% geos) |> 
+  filter_recode(
+    measure = c("ULCE", "ULCH"),
+    unit_measure = "IX"
+  ) |> 
+  select(-unit_measure) |> 
+  ggplot(aes(time, rel, colour = geo)) +
+  facet_wrap(~measure) +
+  geom_line() +
+  scale_linewidth_manual(values = geos_width) +
+  the_title_blank("xyl") +
+  labs(
+    title = "BKT per capita",
+    subtitle = "Indeksi, 2007 = 100",
+    caption = "Lähde: OECD, Tuottavuuslautakunta"
+  )
+```
+
+![](competitiveness_files/figure-html/unnamed-chunk-2-1.png)
+
+Näytä koodi
+
+``` r
+dat_oecd_ulcq |> 
+  filter_recode(
+    geo = "FI",
+    measure = c("ULCE", "GDPEMP", "LCEMP")
+  ) |> 
+  ggplot(aes(time, rel, colour = measure)) +
+  geom_line()
+```
+
+![](competitiveness_files/figure-html/unnamed-chunk-3-1.png)
+
+Näytä koodi
+
+``` r
+dat_oecd_pdb_ulc |> 
+  filter_recode(
+    geo = "FI",
+    var_id = c("ULCE-IX-V", "GDPEMP-XDC_PS-LR", "LCEMP-XDC_PS-V")
+    
+  ) |> 
+  ggplot(aes(time, rel, colour = measure)) +
+  geom_line()
+```
+
+![](competitiveness_files/figure-html/unnamed-chunk-4-1.png)
+
+Näytä koodi
+
+``` r
+dat_oecd_ulcq |> 
+  filter_recode(
+    geo = "FI",
+    measure = c(
+    "Yksikkötyökustannus" = "ULCE", 
+    "Työn tuottavuus" = "GDPEMP", 
+    "Työvoimakustannus" = "LCEMP")
+  ) |> 
+  mutate(time = lubridate::year(time)) |>
+  group_by(time, across(where(is.factor))) |> 
+  summarise(rel = mean(rel)) |> 
+  group_by(across(where(is.factor))) |> 
+  mutate(rel = rebase(rel, time, 1996:2024)) |>
+  ungroup() |> 
+  ggplot(aes(time, rel, colour = measure)) +
+  geom_line() +
+  the_title_blank("yxl") +
+  labs(
+    title = "Yksikkötyökustannus ja sen osatekijät, suhteellinen",
+    subtitle = "Suhteessa verrokkimaihin, indeksi, keskiarvo 1996-2004 = 100",
+    caption = "Lähde: OECD, Tuottavuuslautakunta"
+  )
+```
+
+![](competitiveness_files/figure-html/unnamed-chunk-5-1.png)
+
+Näytä koodi
+
+``` r
+ggptt::ggsave_blog("ULC")
+```
+
+Näytä koodi
+
+``` r
+dat_oecd_ulcq |> 
+  filter_recode(
+    geo = c("FI", "SE", "DK", "US"),
+    measure = c(
+    "Työvoimakustannus" = "LCEMP")
+  ) |> 
+  mutate(time = lubridate::year(time)) |>
+  group_by(time, across(where(is.factor))) |> 
+  summarise(rel = mean(index15)) |> 
+  group_by(across(where(is.factor))) |> 
+  mutate(rel = rebase(rel, time, 2013)) |>
+  ungroup() |> 
+  ggplot(aes(time, rel, colour = geo)) +
+  geom_line() +
+    geom_text(
+    data = . %>% filter(time == 2024),
+    aes(label = rel),
+    hjust = -0.1
+  ) +
+  the_title_blank("yxl") +
+  labs(
+    title = "Yksikkötyökustannus ja sen osatekijät, suhteellinen",
+    subtitle = "Suhteessa verrokkimaihin, indeksi keskiarvo 1996-2004 = 100",
+    caption = "Lähde: OECD, Tuottavuuslautakunta"
+  )
+```
+
+![](competitiveness_files/figure-html/unnamed-chunk-6-1.png)
+
+Näytä koodi
+
+``` r
+dat_oecd_pdb_ulc |> 
+  filter(
+    time >= "1995-01-01",
+         geo %in% geos) |> 
+  filter_recode(
+    var_id = c("LCHRS-XDC_H-V", "LCHRS-XDC_H-V", "GDPHRS-XDC_H-LR")
+  ) |> 
+  select(-unit_measure) |> 
+  ggplot(aes(time, rel, colour = geo)) +
+  facet_wrap(~measure) +
+  geom_line() +
+  scale_linewidth_manual(values = geos_width) +
+  the_title_blank("xyl") +
+  labs(
+    title = "BKT per capita",
+    subtitle = "Indeksi, 2007 = 100",
+    caption = "Lähde: OECD, Tuottavuuslautakunta"
+  )
+```
+
+![](competitiveness_files/figure-html/unnamed-chunk-7-1.png)
+
+Näytä koodi
+
+``` r
+dat_statfin_vtp_pxt_11yx_px |> 
+  filter_recode(
+    taloustoimi = c(
+      "Tavaroiden ja palveluiden tase" = "B11",
+      "Vaihtotase" = "B9"
+    )
+  ) |> 
+  # filter(time >= "1995-01-01") |> select(time, taloustoimi, values) |> spread(taloustoimi, values) |> pttdatahaku::conc()
+  ggplot(aes(time, -values, colour = taloustoimi)) +
+  geom_line() +
+  geom_hline(yintercept = 0) +
+  scale_y_continuous(labels = scales::label_number(decimal.mark = ",")) +
+  the_title_blank("xly") +
+  the_legend_bot() +
+  labs(
+    title = "Ulkoinen tasapain",
+    subtitle = "Suhteessa BKT:seen, %",
+    caption = "Lähde: Tilastokeskus"
+  )
+```
+
+![](competitiveness_files/figure-html/unnamed-chunk-8-1.png)
+
+Näytä koodi
+
+``` r
+ggptt::ggsave_blog("Ulkoinen tasapain")
+```
+
+Näytä koodi
+
+``` r
+dat_oecd_ulcq |> 
+  filter_recode(
+    geo = c("FI", "SE"),
+    measure = c(
+    "Yksikkötyökustannus" = "ULCE", 
+    "Työn tuottavuus" = "GDPEMP", 
+    "Työvoimakustannus" = "LCEMP")
+  ) |> 
+  mutate(time = lubridate::year(time)) |>
+  group_by(time, across(where(is.factor))) |> 
+  summarise(index15 = mean(index15)) |>
+  ungroup() %>% 
+  ggplot(aes(time, index15, colour = geo)) +
+  facet_wrap(~measure) +
+  geom_line() +
+  the_title_blank("yxl") +
+  labs(
+    title = "Yksikkötyökustannus ja sen osatekijät, suhteellinen",
+    subtitle = "Suhteessa verrokkimaihin, indeksi, keskiarvo 1996-2004 = 100",
+    caption = "Lähde: OECD, Tuottavuuslautakunta"
+  )
+```
+
+![](competitiveness_files/figure-html/unnamed-chunk-9-1.png)

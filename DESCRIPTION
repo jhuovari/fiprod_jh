@@ -9,7 +9,6 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Suggests: 
     knitr,
     quarto,
@@ -29,13 +28,15 @@ Imports:
     pkgdown,
     plotly,
     pxwebtools (>= 0.1.5),
-    tidyselect
+    tidyselect,
+    pttdatahaku
 Remotes: 
     jhuovari/pxwebtools,
     jhuovari/ggcustom
-    pttry/pxwebtools
+    pttry/pttdatahaku
 Config/testthat/edition: 3
 Depends: 
     R (>= 3.5)
 LazyData: true
 URL: https://tuottavuuslautakunta.github.io/fiprod/
+Config/roxygen2/version: 8.0.0

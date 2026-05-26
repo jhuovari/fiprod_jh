@@ -227,7 +227,7 @@ dat_statfin_vtp_pxt_11yx_px |>
       "Vaihtotase" = "B9"
     )
   ) |> 
-  filter(time >= "1995-01-01") |> select(time, taloustoimi, values) |> spread(taloustoimi, values) |> pttdatahaku::conc()
+  # filter(time >= "1995-01-01") |> select(time, taloustoimi, values) |> spread(taloustoimi, values) |> pttdatahaku::conc()
   ggplot(aes(time, -values, colour = taloustoimi)) +
   geom_line() +
   geom_hline(yintercept = 0) +

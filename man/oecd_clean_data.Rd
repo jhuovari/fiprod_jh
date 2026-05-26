@@ -4,7 +4,13 @@
 \alias{oecd_clean_data}
 \title{Clean and reshape OECD SDMX data}
 \usage{
-oecd_clean_data(df, drop_vars = NULL, vars = c(), freq = "A")
+oecd_clean_data(
+  df = NULL,
+  sdmx_obj = NULL,
+  drop_vars = NULL,
+  vars = c(),
+  freq = "A"
+)
 }
 \arguments{
 \item{df}{A data.frame containing OECD SDMX data.}

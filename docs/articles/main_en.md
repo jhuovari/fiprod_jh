@@ -1,0 +1,840 @@
+# Economic growth and productivity
+
+DRAFT
+
+Updated: 2026-05-26
+
+Show code
+
+``` r
+# library(fiprod)
+
+if (interactive()) devtools::load_all(".") else library(fiprod) 
+
+library(tidyverse)
+library(ggcustom)
+library(pttdatahaku)
+
+
+set_gg(theme_fpb())
+
+
+dat_oecd_pdb_main <- load_dat("dat_oecd_pdb_main") 
+
+dat_oecd_pdb_ind <- load_dat("dat_oecd_pdb_ind") 
+
+dat_gva_ind <- load_dat("dat_gva_ind") 
+
+geos <- rev(c(
+  "Finland"         = "FI",
+  "Euro area"      = "EA20",
+  "Sweden"        = "SE",
+  "Denmark"        = "DK",
+  "Germany"         = "DE",
+  "USA"           = "US",
+  "others"          = "Other"
+))
+
+geos_width <- set_names(if_else(geos %in% c("FI"), 2, 1.3), names(geos))
+geos_colour <- set_names(c("grey80", rev(ggcustom_pal(length(geos) -1, "fpb"))), names(geos)) # grey for the others category
+
+
+# geos_name <- set_names(names(geos), geos)
+```
+
+## Data on economic growth and productivity development
+
+The main source used is the [OECD productivity
+database](https://data-explorer.oecd.org/vis?fs%5B0%5D=Topic%2C1%7CEconomy%23ECO%23%7CProductivity%23ECO_PRO%23&pg=0&fc=Topic&bp=true&snb=7&df%5Bds%5D=dsDisseminateFinalDMZ&df%5Bid%5D=DSD_PDB%40DF_PDB&df%5Bag%5D=OECD.SDD.TPS&df%5Bvs%5D=2.0&dq=.A.GVAHRS._T.XDC_H..N..&lom=LASTNPERIODS&lo=5&to%5BTIME_PERIOD%5D=false&isAvailabilityDisabled=false)
+data ([database
+revamp](https://www.oecd.org/en/publications/the-revamp-of-the-oecd-productivity-database_f07c55d4-en.html)
+and
+[metadata](https://www.oecd.org/content/dam/oecd/en/data/methods/OECD-Productivity-Statistics-Database-metadata.pdf)).
+
+For industries, price level data come from the [GGDC Productivity
+level](https://www.rug.nl/ggdc/productivity/pld/) database.
+
+## GDP growth
+
+Show code
+
+``` r
+# OECD codes:
+# 
+# V Current prices
+# 
+# LR base year 2020 (also L, where the base year varies).
+
+dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    geo = geos,
+    measure = c("GDPPOP"),
+    activity = c("Total economy" = "_T"),
+    price_base = c("LR"),        # 
+    conversion_type = c("PPP")
+  ) |> 
+  select(-unit_measure) |> 
+  mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |>  
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  geom_line() +
+  scale_linewidth_manual(values = geos_width) +
+  scale_colour_manual(values = geos_colour) +
+  guides(colour = guide_legend(reverse = TRUE), 
+         linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "GDP per capita",
+    subtitle = "Index, 2007 = 100",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-1-1.png)
+
+## Growth split into productivity and hours worked
+
+Show code
+
+``` r
+dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    geo = geos,
+    measure = c("Labour productivity" = "GVAHRS", "Hours per capita" = "HRSPOP"),
+    activity = c("Total economy" = "_T"),
+    unit_measure = c("USD_PPP_H", "H_PS"),
+    price_base = c("LR", "_Z"),        
+    conversion_type = c("PPP", "_Z")
+  ) |> 
+  select(-unit_measure) |> 
+  mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~measure) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "GDP per capita",
+    subtitle = "Index, 2007 = 100",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-2-1.png)
+
+## Labour productivity growth in the private sector and elsewhere
+
+Show code
+
+``` r
+dat_gva_ind |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Total economy" = "_T", "Private sector" = "BTNXL"),
+    vars = c("fp_2020_ppp17")
+  ) |> 
+  mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter(geo != "DK") |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~ activity, nrow = 1) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Labour productivity, value added / hours worked",
+    subtitle = "Index, 2007 = 100",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-3-1.png)
+
+### Industries outside the private sector
+
+Show code
+
+``` r
+dat_gva_ind |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Real estate" = "L", "Public sector" = "OTQ", "Other services" = "RTU"),
+    vars = c("fp_2020_ppp17")
+  ) |> 
+  mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter(geo != "DK") |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~ activity, nrow = 1) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Labour productivity, value added / hours worked",
+    subtitle = "Index, 2007 = 100",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-4-1.png)
+
+### Private sector breakdown
+
+Show code
+
+``` r
+dat_gva_ind|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Industry" = "BTE", "Construction" = "F","Private services" = "GTNXL"),
+    vars = c("fp_2020_ppp17")
+  ) |> 
+  mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter(geo != "DK") |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  scale_y_continuous(limits = c(50, 150)) +
+  facet_wrap(~ activity) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Labour productivity, value added / hours worked",
+    subtitle = "Index, 2007 = 100",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-5-1.png)
+
+### Shares
+
+Show code
+
+``` r
+dat_gva_ind |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVA"),
+    activity = c("_T", "BTNXL", "L", "OTQ", "RTU"),
+    vars = c("cp")
+  ) |> 
+  mutate(values = 100 * values / values[activity == "_T"] , .by = !c(activity, values)) |> 
+  filter_recode(
+    geo = geos,
+    activity = c("Private sector" = "BTNXL", "Real estate" = "L", "Public sector" = "OTQ", "Other services" = "RTU")) |> 
+  ggplot(aes(time, values, colour = activity)) +
+  facet_wrap(~ geo, nrow = 1) +
+  geom_line() +
+  scale_x_date(date_labels = "%y") +
+  the_title_blank("xyl") +
+  labs(
+    title = "Share of value added",
+    subtitle = "%",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) 
+```
+
+![](main_en_files/figure-html/unnamed-chunk-6-1.png)
+
+Show code
+
+``` r
+dat_gva_ind |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVA"),
+    activity = c("_T", "A", "BTE", "F", "GTNXL", "L", "OTQ", "RTU"),
+    vars = c("cp")
+  ) |> 
+  spread(activity, values) |> 
+  rowwise() |> 
+  mutate(Other = `_T` - sum(c_across(all_of(c("A", "BTE", "F", "GTNXL", "L", "OTQ", "RTU"))), na.rm = TRUE),
+         Other = if_else(Other == `_T`, NA, Other)) |> 
+  ungroup() |> 
+  pivot_longer(where(is.numeric), names_to = "activity", values_to = "values") |> 
+  mutate(values = 100 * values / values[activity == "_T"] , .by = !c(activity, values)) |> 
+  filter_recode(
+    geo = geos,
+    activity = c("Industry" = "BTE", "Construction" = "F","Private services" = "GTNXL", "Real estate" = "L", "Public-type services" = "OTQ", "Other services" = "RTU", "Agriculture" = "A", "Other")) |> 
+  ggplot(aes(time, values, colour = activity)) +
+  facet_wrap(~ geo, nrow = 1) +
+  geom_line() +
+  scale_x_date(date_labels = "%y") +
+  the_title_blank("xyl") +
+  labs(
+    title = "Share of value added",
+    subtitle = "%",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) 
+```
+
+![](main_en_files/figure-html/unnamed-chunk-7-1.png)
+
+There is an error in OECD data. Other should be zero, but in the data
+Industry includes only manufacturing.
+
+Show code
+
+``` r
+dat_gva_ind |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVA", "GVAHRS"),
+    activity = c("_T", "BTE", "F", "GTNXL", "BTNXL", "L", "OTQ", "RTU", "A"),
+    vars = c("cp")
+  ) |> 
+  spread(activity, values) |> 
+  rowwise() |> 
+  mutate(Other = `_T` - sum(c_across(all_of(c("A", "BTE", "F", "GTNXL", "L", "OTQ", "RTU"))), na.rm = TRUE),
+         Other = if_else(Other == `_T`, NA, Other)) |> 
+  ungroup() |> 
+  pivot_longer(where(is.numeric), names_to = "activity", values_to = "values") |> 
+  spread(measure, values) |> 
+  mutate(HRS = GVA / GVAHRS) |> 
+  select(-GVA, -GVAHRS) |> 
+  pivot_longer(HRS, names_to = "measure", values_to = "values") |> 
+  mutate(values = 100 * values / values[activity == "_T"] , .by = !c(activity, values)) |> 
+  filter_recode(
+    geo = geos,
+activity = c("Industry" = "BTE", "Construction" = "F","Private services" = "GTNXL", "Real estate" = "L", "Public-type services" = "OTQ", "Other services" = "RTU", "Agriculture" = "A", "Other")) |> 
+  ggplot(aes(time, values, colour = activity)) +
+  facet_wrap(~ geo, nrow = 1) +
+  geom_line() +
+  scale_x_date(date_labels = "%y") +
+  the_title_blank("xyl") +
+  labs(
+    title = "Share of hours worked",
+    subtitle = "%",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) 
+```
+
+![](main_en_files/figure-html/unnamed-chunk-8-1.png)
+
+## GDP and productivity levels
+
+GDP and productivity growth is easier to compare than levels, because
+countries have different price levels and exchange rates also vary a
+lot.
+
+Show code
+
+``` r
+dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GDPPOP"),
+    activity = c("Total economy" = "_T"),
+    price_base = c("LR"),        # 
+    conversion_type = c("PPP")
+  ) |> 
+  mutate(geo2 = suppressWarnings(fct_relevel(geo, geos, after = Inf))) |>
+  mutate(geo = fct_other(geo, keep = geos, other_level = "Other")) |> 
+  filter_recode(geo = geos) |> 
+  select(-unit_measure) |> 
+  ggplot(aes(time, values, group = geo2, colour = geo, linewidth = geo)) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "GDP relative to population",
+    subtitle = "At 2020 prices, PPP-adjusted",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-9-1.png)
+
+Show code
+
+``` r
+# ggptt::ggsave_ppt_half("bkt_capita", plot = last_plot() filter(p@data, geo != "Denmark") +theme_vm() +the_title_blank("xyl"))
+
+# last_plot()$data |> filter(geo != "others")  |> select(geo, time, values) |> spread(geo, values) |> conc()
+```
+
+### At constant prices with exchange rates and PPP
+
+Base year 2020
+
+Show code
+
+``` r
+dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GDPPOP"),
+    activity = c("Total economy" = "_T"),
+    price_base = c("LR"),        # 
+    conversion_type = c(MP = "_Z","PPP")
+  ) |> 
+  select(-unit_measure,  -var_id) |> 
+  spread(conversion_type, values) |>
+  # For some reason, OECD data has no market-price series for the USA, but it equals PPP because PPP is relative to the USA.
+  mutate(MP = if_else(geo == "US", PPP, MP)) |>
+  mutate(MP = convert_currency(MP, geo, time, to = "USD", base_time = "2020-01-01")) |> 
+  pivot_longer(where(is.numeric), names_to = "conversion_type", values_to = "values") |>
+  filter_recode(
+    geo = geos,
+    conversion_type = c("Exchange rate" = "MP", "Purchasing power parity" ="PPP")
+  ) |>
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~ conversion_type) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "GDP per capita at constant prices",
+    subtitle = "2020 USD",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-10-1.png)
+
+### At current prices with exchange rates and PPP
+
+Show code
+
+``` r
+dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+     measure = c("GDPPOP"),
+    activity = c("Total economy" = "_T"),
+    price_base = c("V"),        # 
+    conversion_type = c(MP = "_Z","PPP")
+  ) |> 
+  select(-unit_measure,  -var_id) |> 
+  spread(conversion_type, values) |> 
+  # For some reason, OECD data has no market-price series for the USA, but it equals PPP because PPP is relative to the USA.
+  # mutate(MP = if_else(geo == "US", PPP, MP)) |> 
+  mutate(MP1 = convert_currency(MP, geo, time, to = "USD", base_time = "2020-01-01")) |>
+  mutate(MP2 = convert_currency(MP, geo, time, to = "USD")) |> 
+  select(-MP) |> 
+  pivot_longer(where(is.numeric), names_to = "conversion_type", values_to = "values") |> 
+  filter_recode(
+    geo = geos,
+    conversion_type = c("Exchange rate, variable" = "MP2","Exchange rate 2020" = "MP1" , "Purchasing power parity 2020" ="PPP")
+  ) |>
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~ conversion_type) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "GDP per capita at current prices",
+    subtitle = "2020 USD",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-11-1.png)
+
+## Level gap in productivity and hours worked
+
+Is the GDP level gap explained by productivity or by hours worked?
+
+In the OECD database, labour productivity is measured with value added
+per hour worked, and hours with hours per capita.
+
+Clearly, the level gap comes from labour productivity, not from hours
+worked. However, the labour productivity level gap to the United States
+is much larger than GDP per capita, even though hours per capita are
+almost the same. Why?
+
+Show code
+
+``` r
+dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    geo = geos,
+    measure = c("Labour productivity" = "GVAHRS", "Hours per capita" = "HRSPOP"),
+    activity = c("Total economy" = "_T"),
+    unit_measure = c("USD_PPP_H", "H_PS"),
+    price_base = c("LR", "_Z"),        
+    conversion_type = c("PPP", "_Z")
+  ) |> 
+  select(-unit_measure) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~measure, scales = "free") +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Labour productivity and hours worked",
+    subtitle = "Index, 2007 = 100",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-12-1.png)
+
+The reason is different statistical practices between the United States
+and Eurostat. GDP per hour worked shows differences similar to GDP per
+capita. Value added per hour worked is instead clearly higher in the
+United States than in EU countries.
+
+In European national accounts, GDP = value added + product taxes -
+subsidies. In the United States, GDP and value added are the same, and
+product taxes and subsidies are already included at the value-added
+level.
+
+Show code
+
+``` r
+dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter(var_id %in% c("GVAHRS-USD_PPP_H-LR-PPP", 
+                       "GDP-USD_PPP-LR-PPP", 
+                       "GVA-USD_PPP-LR-PPP", 
+                       "HRSPOP-H_PS-_Z-_Z")) |> 
+  filter_recode(
+    geo = geos,
+    measure = c("GVAHRS", "GDP", "GVA", "HRSPOP"),
+    activity = c("Total economy" = "_T"),
+    unit_measure = c("USD_PPP_H", "USD_PPP", "H_PS"),
+    price_base = c("LR", "_Z"),        
+    conversion_type = c("PPP", "_Z")
+  ) |> 
+  select(time, geo, measure, values) |> 
+  spread(measure, values) |> 
+  mutate(HRS = GVA / GVAHRS,
+         GDPHRS = GDP / HRS) |> 
+  pivot_longer(where(is.numeric), names_to = "measure", values_to = "values") |> 
+  filter_recode(
+    measure = c("GDPHRS", "GVAHRS")
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~measure, scales = "free") +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "GDP and value added per hour worked",
+    subtitle = "PPP-adjusted, 2020 $",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-13-1.png)
+
+Show code
+
+``` r
+dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    geo = geos,
+    measure = c("GDP", "GVA"),
+    activity = c("Total economy" = "_T"),
+    # unit_measure = c("USD_PPP"),
+    price_base = c("V") ,        
+    conversion_type = c("PPP")
+  ) |> 
+  select(-unit_measure) |> 
+  ggplot(aes(time, values, colour = measure)) +
+  facet_wrap(~geo, scales = "free") +
+  geom_line() +
+  the_title_blank("xyl") +
+  labs(
+    title = "GDP and value added",
+    subtitle = "PPP-adjusted, 2020 $",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) +
+  geom_hline(yintercept = 0)
+```
+
+![](main_en_files/figure-html/unnamed-chunk-14-1.png)
+
+GDP can only be used for the whole economy. Value added must be used
+when the economy is examined by industries or industry groups.
+
+Productivity differences in the private sector are not as large, even
+when value added is used.
+
+In OECD statistics, the private sector means the part of the economy
+that can be measured reasonably reliably, including broad industry (B,
+C, E, D), construction (F), and market services (G-N excl. L). It
+excludes agriculture, real estate, public-type services (public
+administration, education, and health and social services; these also
+include private services), and small service industries (R, S, T).
+
+Show code
+
+``` r
+dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Total economy" = "_T", "Private" = "BTNXL"),
+    price_base = c("LR"),        # 
+    conversion_type = c("_Z")
+  ) |> 
+  # group_by(across(where(is.factor))) |> 
+  # mutate(values = rebase(values, time, 2005)) |> 
+  # ungroup() |> |> 
+  mutate(values = convert_currency(values, geo, time, to = "USD", base_time = "2020-01-01")) |>   filter_recode(
+    geo = geos
+  )|> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~ activity) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Value added / hours worked",
+    subtitle = "2020 $",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) 
+```
+
+![](main_en_files/figure-html/unnamed-chunk-15-1.png)
+
+## OECD and GGDC difference in PPP
+
+Industry-level data are price-level adjusted using industry PPP price
+levels from the GGDC Productivity Level Database. The OECD database does
+not include PPP-adjusted series for industries.
+
+Prices for the total economy and industry groups are aggregated as
+value-added-weighted averages. Below, differences in
+price-level-adjusted gross value added at the total-economy level are
+examined using OECD and GGDC PPP data.
+
+A small difference between series is expected, because OECD uses base
+year 2020 and GGDC uses 2017. For the countries examined, the
+differences are explained by the base year.
+
+Show code
+
+``` r
+# 
+# dat_gva_ind |> str()
+# dat_oecd_pdb_main |> str()
+
+dat1 <- dat_oecd_pdb_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    geo = geos,
+    measure = c("GVA"),
+    activity = c("_T"),
+    price_base = c("LR"),        # 
+    conversion_type = c("PPP")
+  ) |> 
+  select(time, geo, values) |> 
+  mutate(ppp_source = "oecd")
+  
+dat2 <- dat_gva_ind |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    geo = geos,
+    measure = c("GVA"),
+    activity = c("_T"),
+    vars = "fp_2020_ppp17"
+  ) |> 
+  select(time, geo, values) |> 
+  mutate(ppp_source = "ggdc")
+
+bind_rows(dat1, dat2) |> 
+  mutate(values = values / 1000) |> 
+  ggplot(aes(time, values, colour = ppp_source)) +
+  facet_wrap(~geo, scales = "free") +
+  geom_line() +
+  the_title_blank("xyl") +
+  the_legend_bot() +
+  labs(title = "Gross value added in the total economy",
+       subtitle = "Billion PPP dollars at 2020 or 2017 prices")
+```
+
+![](main_en_files/figure-html/unnamed-chunk-16-1.png)
+
+Show code
+
+``` r
+dat_gva_ind|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Total economy" = "_T", "Private" = "BTNXL", "Public-type" = "OTQ"),
+    vars = c("Exchange rate" = "fp_2020_xr17", "PPP" = "fp_2020_ppp17")
+  ) |> 
+  # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  # scale_y_continuous(limits = c(50, 150)) +
+  facet_grid(vars ~ activity) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Value added / hours worked",
+    subtitle = "2017 $, with exchange rates and PPP adjustment",
+    caption = "Source: OECD, Finnish Productivity Board"
+  )
+```
+
+![](main_en_files/figure-html/unnamed-chunk-17-1.png)
+
+Show code
+
+``` r
+dat_gva_ind|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Real estate" = "L", "Other services" = "RTU"),
+    vars = c("Exchange rate" = "fp_2020_xr17", "PPP" = "fp_2020_ppp17")
+  ) |> 
+  # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  # scale_y_continuous(limits = c(50, 150)) +
+  facet_wrap(vars ~ activity, scales = "free") +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Value added / hours worked",
+    subtitle = "2017 $, with exchange rates and PPP adjustment",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) 
+```
+
+![](main_en_files/figure-html/unnamed-chunk-18-1.png)
+
+Show code
+
+``` r
+dat_gva_ind|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Industry" = "BTE","Private services" = "GTNXL"),
+    vars = c("fp_2020_ppp17")
+  ) |> 
+  # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  # scale_y_continuous(limits = c(50, 150)) +
+  facet_wrap(~ activity) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Value added / hours worked",
+    subtitle = "2017 $, PPP-adjusted",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) 
+```
+
+![](main_en_files/figure-html/unnamed-chunk-19-1.png)
+
+Show code
+
+``` r
+dat_gva_ind|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Industry" = "BTE", "Construction" = "F", "Private services" = "GTNXL"),
+    vars = c("Exchange rate" = "fp_2020_xr17", "PPP" = "fp_2020_ppp17")
+  ) |> 
+  # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  # scale_y_continuous(limits = c(50, 150)) +
+  facet_grid(vars ~ activity) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Value added / hours worked",
+    subtitle = "2017 $, PPP-adjusted",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) 
+```
+
+![](main_en_files/figure-html/unnamed-chunk-20-1.png)
+
+Show code
+
+``` r
+dat_gva_ind|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Industry" = "BTE", "Private services" = "GTNXL"),
+    vars = c("Exchange rate" = "fp_2020_xr17", "PPP" = "fp_2020_ppp17")
+  ) |> 
+  # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  # scale_y_continuous(limits = c(50, 150)) +
+  facet_grid(vars ~ activity) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Value added / hours worked",
+    subtitle = "2017 $, PPP-adjusted",
+    caption = "Source: OECD, Finnish Productivity Board"
+  ) 
+```
+
+![](main_en_files/figure-html/unnamed-chunk-21-1.png)

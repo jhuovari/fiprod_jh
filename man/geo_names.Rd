@@ -19,6 +19,7 @@ to country or region names in the selected language.
 \examples{
 geo_names("fi")
 geo_names("en")
+df = data.frame(geo = c("FI", "SE"))
 dplyr::mutate(df, geo_name = dplyr::recode(geo, !!!geo_names("en")))
 
 }

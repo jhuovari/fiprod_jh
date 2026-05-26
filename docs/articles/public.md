@@ -1,0 +1,248 @@
+# Julkisen sektorin tuottavuus
+
+KESKEN
+
+Päivitetty: 2026-05-26
+
+Näytä koodi
+
+``` r
+if (interactive()) devtools::load_all(".") else library(fiprod) 
+
+library(tidyverse)
+library(ggcustom)
+library(pttdatahaku)
+
+
+set_gg(theme_fpb())
+
+
+dat_oecd_pdb_main <- load_dat("dat_oecd_pdb_main") 
+
+dat_oecd_pdb_ind <- load_dat("dat_oecd_pdb_ind") 
+
+dat_gva_ind <- load_dat("dat_gva_ind") 
+
+geos <- rev(c(
+  "Suomi"         = "FI",
+  "Euroalue"      = "EA20",
+  "Ruotsi"        = "SE",
+  "Tanska"        = "DK",
+  "Saksa"         = "DE",
+  "USA"           = "US",
+  "UK"            = "UK",
+  "Ranska"        = "FR",
+  "muut"          = "Other"
+))
+
+geos_width <- set_names(if_else(geos %in% c("FI"), 2, 1.3), names(geos))
+geos_colour <- set_names(c("grey80", rev(ggcustom_pal(length(geos) -1, "fpb"))), names(geos)) # muut luokalle harmaa
+
+
+# geos_name <- set_names(names(geos), geos)
+```
+
+Julkisen sektorin tuottavuus käsittää käytännössä kolmen toimialan
+julkisen hallinnon, koulutuksen sekä terveys- ja sosiaalipalveluiden
+tuottavuuden. Ne sisältävät, varsinkin terveyspalvelut, myös yksitysen
+sektorin tuotantoa. Pelkällä sektorijaolla ei ole saatavilla kattavaa
+aineistoa maavertailua varten.
+
+Näytä koodi
+
+``` r
+dat_gva_ind |> 
+  # filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Julkinen" = "OTQ"),
+    vars = c("fp_2020_ppp17")
+  ) |> 
+  mutate(values = rebase(values, time, baseyear = 2000), .by = where(is.factor)) |> 
+  filter(geo != "DK") |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Työn tuottavuus, arvonlisä / työtunnit",
+    subtitle = "Indeksi, 2000 = 100",
+    caption = "Lähde: OECD, Tuottavuuslautakunta"
+  )
+```
+
+![](public_files/figure-html/unnamed-chunk-1-1.png)
+
+Näytä koodi
+
+``` r
+dat_gva_ind |> 
+  # filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Hallinto" = "O", "Koulutus" = "P", "SOTE" = "Q"),
+    vars = c("fp_2020_ppp17")
+  ) |> 
+  mutate(values = rebase(values, time, baseyear = 2000), .by = where(is.factor)) |> 
+  filter(geo != "DK") |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~ activity, nrow = 1) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Työn tuottavuus, arvonlisä / työtunnit",
+    subtitle = "Indeksi, 2000 = 100",
+    caption = "Lähde: OECD, Tuottavuuslautakunta"
+  )
+```
+
+![](public_files/figure-html/unnamed-chunk-2-1.png)
+
+Näytä koodi
+
+``` r
+dat_gva_ind |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVA", "HRS"),
+    activity = c("TOT" = "_T", "OTQ"),
+    vars = c("cp")
+  ) |> 
+ spread(activity, values) |> 
+  filter_recode(
+    geo = geos) |> 
+  mutate(values = 100 * OTQ / TOT) |> 
+  ggplot(aes(time, values, colour = measure)) +
+  facet_wrap(~ geo, nrow = 1) +
+  geom_line() +
+  scale_x_date(date_labels = "%y") +
+  the_title_blank("xyl") +
+  labs(
+    title = "Osuus työtunneista",
+    subtitle = "%",
+    caption = "Lähde: OECD, Tuottavuuslautakunta"
+  ) 
+```
+
+![](public_files/figure-html/unnamed-chunk-3-1.png)
+
+Näytä koodi
+
+``` r
+kk <- dat_gva_ind |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVA", "HRS"),
+    activity = c("TOT" = "_T", "OTQ"),
+    vars = c("cp", "fp_2020_lc")
+  ) |> 
+ pivot_wider(names_from = c(measure, vars), values_from = values, names_sep = "__") |> 
+ select(-HRS__fp_2020_lc) |> 
+ mutate(GVA__pp = statfitools::pp(GVA__cp, GVA__fp_2020_lc, time), .by = c(geo, activity)) |> 
+ pivot_wider(
+    names_from = activity,
+    values_from = where(is.numeric),
+    , names_sep = "___"
+  ) |> 
+  mutate(
+    GVA__cp___TOTex = GVA__cp___TOT - GVA__cp___OTQ,
+    HRS__cp___TOTex = HRS__cp___TOT - HRS__cp___OTQ,
+    GVA__pp___TOTex = GVA__pp___TOT - GVA__pp___OTQ
+  ) |> 
+  mutate(GVA__fp_2020_lc___TOTex = statfitools::fp(GVA__cp___TOTex, GVA__pp___TOTex, year(time), 2020), .by = geo) |> 
+  # select(-contains("__pp")) |> 
+  pivot_longer(cols = where(is.numeric), names_to = c("vars", "activity"), names_sep = "___", values_to = "values", names_transform = as_factor) |> 
+  pivot_wider(names_from = "vars", values_from = "values") |> 
+  mutate(GVAHRS__fp_2020_lc = GVA__fp_2020_lc / HRS__cp) |> 
+  pivot_longer(cols = where(is.numeric), names_to = c("measure", "vars"), names_sep = "__", values_to = "values", names_transform = as_factor)
+  
+kk |> 
+  filter_recode(
+    measure = "GVAHRS",
+    vars = "fp_2020_lc",
+    geo = geos
+  ) |> 
+  mutate(change = pc(values, 1, time), .by = c(geo, activity)) |> 
+  mutate(period = case_when(
+    # year(time) %in% (1995:2007) ~ "1995-2007",
+    # year(time) %in% (2008:2015) ~ "1998-2015",
+    year(time) %in% (1995:2024) ~ "1995-2024",
+  )) |> 
+  filter(!is.na(period)) |> 
+  summarise(values = mean(change, na.rm = TRUE), .by = c(geo, activity, period)) |> 
+  mutate(geo = fct_reorder(geo, values, .fun = max)) |> 
+  ggplot(aes(geo, values, fill = activity)) +
+    facet_wrap(~period, ncol = 1) +
+    geom_col(position = "dodge")
+```
+
+![](public_files/figure-html/unnamed-chunk-4-1.png)
+
+Näytä koodi
+
+``` r
+kk |> 
+  filter_recode(
+    measure = "GVAHRS",
+    vars = "fp_2020_lc",
+    geo = geos
+  ) |> 
+  mutate(values = pc(values, 1, time), .by = c(geo, activity)) |> 
+  spread(activity, values) |> 
+  mutate(diff = TOT - TOTex) |> 
+  summarise(values = mean(diff, na.rm = TRUE), .by = c(geo)) |> 
+  mutate(geo = fct_reorder(geo, values, .fun = max)) |> 
+  ggplot(aes(geo, values)) +
+
+    geom_col(position = "dodge")
+```
+
+![](public_files/figure-html/unnamed-chunk-5-1.png)
+
+Näytä koodi
+
+``` r
+kk |> 
+  filter_recode(
+    measure = "GVAHRS",
+    vars = "fp_2020_lc",
+    geo = geos
+  ) |> 
+  mutate(values = pc(values, 1, time), .by = c(geo, activity)) |> 
+  spread(activity, values) |> 
+  mutate(diff = TOT - TOTex) |> 
+  pivot_longer(cols = where(is.numeric), names_to = "activity", values_to = "values", names_transform = as_factor) |> 
+  filter_recode(
+    activity =
+      c("Koko talous" = "TOT",
+        "Julkinen" = "OTQ",
+        "Ilman julkista" = "TOTex",
+        "Erotus" = "diff")
+  ) |> 
+  mutate(period = case_when(
+    # year(time) %in% (1995:2007) ~ "1995-2007",
+    # year(time) %in% (2008:2015) ~ "1998-2015",
+    year(time) %in% (1998:2023) ~ "1998-2023",
+  )) |> 
+  filter(!is.na(period)) |> 
+  summarise(values = mean(values), .by = c(geo, period, activity)) |> 
+  mutate(geo = fct_reorder(geo, values, .fun = max)) |> 
+  ggplot(aes(geo, values, fill = activity)) +
+    facet_wrap(~period, ncol = 1) +
+    geom_col(position = "dodge") +
+  the_title_blank("xtl") +
+  labs(title = "Työn tuottavuuden kasvu keskimäärin, %")
+```
+
+![](public_files/figure-html/unnamed-chunk-5-2.png)
