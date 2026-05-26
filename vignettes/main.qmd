@@ -92,7 +92,7 @@ dat_oecd_pdb_main |>
   the_title_blank("xyl") +
   labs(
     title = "BKT per capita",
-    subtitle = "Indeksi, 2007 = 100",
+    subtitle = "Indeksi, 2007 = 100 (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
   
@@ -124,7 +124,7 @@ dat_oecd_pdb_main |>
   the_title_blank("xyl") +
   labs(
     title = "BKT per capita",
-    subtitle = "Indeksi, 2007 = 100",
+    subtitle = "Indeksi, 2007 = 100 (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
 ```
@@ -159,7 +159,7 @@ dat_gva_ind |>
   the_title_blank("xyl") +
   labs(
     title = "Työn tuottavuus, arvonlisä / työtunnit",
-    subtitle = "Indeksi, 2007 = 100",
+    subtitle = "Indeksi, 2007 = 100 (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
 ```
@@ -194,7 +194,7 @@ dat_gva_ind |>
   the_title_blank("xyl") +
   labs(
     title = "Työn tuottavuus, arvonlisä / työtunnit",
-    subtitle = "Indeksi, 2007 = 100",
+    subtitle = "Indeksi, 2007 = 100 (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
 ```
@@ -226,7 +226,7 @@ dat_gva_ind|>
   the_title_blank("xyl") +
   labs(
     title = "Työn tuottavuus, arvonlisä / työtunnit",
-    subtitle = "Indeksi, 2007 = 100",
+    subtitle = "Indeksi, 2007 = 100 (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
 ```
@@ -250,7 +250,6 @@ dat_gva_ind |>
   facet_wrap(~ geo, nrow = 1) +
   geom_line() +
   scale_x_date(date_labels = "%y") +
-  scale_y_log10(breaks = y_log_breaks) +
   the_title_blank("xyl") +
   labs(
     title = "Osuus arvonlisäyksestä",
@@ -283,7 +282,6 @@ dat_gva_ind |>
   facet_wrap(~ geo, nrow = 1) +
   geom_line() +
   scale_x_date(date_labels = "%y") +
-  scale_y_log10(breaks = y_log_breaks) +
   the_title_blank("xyl") +
   labs(
     title = "Osuus arvonlisäyksestä",
@@ -322,7 +320,6 @@ activity = c("Teollisuus" = "BTE", "Rakentaminen" = "F","Yksityiset palvelut" = 
   facet_wrap(~ geo, nrow = 1) +
   geom_line() +
   scale_x_date(date_labels = "%y") +
-  scale_y_log10(breaks = y_log_breaks) +
   the_title_blank("xyl") +
   labs(
     title = "Osuus työtunneista",
@@ -359,7 +356,7 @@ dat_oecd_pdb_main |>
   the_title_blank("xyl") +
   labs(
     title = "BKT suhteessa väestöön",
-    subtitle = "Vuoden 2020 $ hinnoin ostovoimakorjattuna",
+    subtitle = "Vuoden 2020 $ hinnoin ostovoimakorjattuna (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
 
@@ -403,7 +400,7 @@ dat_oecd_pdb_main |>
   the_title_blank("xyl") +
   labs(
     title = "BKT per capita kiintein hinnoin",
-    subtitle = "Vuoden 2020 USD",
+    subtitle = "Vuoden 2020 USD (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
   
@@ -444,7 +441,7 @@ dat_oecd_pdb_main |>
   the_title_blank("xyl") +
   labs(
     title = "BKT per capita nimellisin hinnoin",
-    subtitle = "Vuoden 2020 USD",
+    subtitle = "Vuoden 2020 USD (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
 
@@ -481,7 +478,7 @@ dat_oecd_pdb_main |>
   the_title_blank("xyl") +
   labs(
     title = "Työn tuottavuus ja työtunnit",
-    subtitle = "Indeksi, 2007 = 100",
+    subtitle = "Indeksi, 2007 = 100 (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
 
@@ -525,7 +522,7 @@ dat_oecd_pdb_main |>
   the_title_blank("xyl") +
   labs(
     title = "BKT ja arvonlisä työtuntia kohden",
-    subtitle = "Osvoimakorjattu 2020 $",
+    subtitle = "Osvoimakorjattu 2020 $ (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
 
@@ -551,7 +548,7 @@ dat_oecd_pdb_main |>
   the_title_blank("xyl") +
   labs(
     title = "BKT ja arvonlisä",
-    subtitle = "Osvoimakorjattu 2020 $",
+    subtitle = "Osvoimakorjattu 2020 $ (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   ) +
   geom_hline(yintercept = 0)
@@ -590,7 +587,7 @@ dat_oecd_pdb_main |>
   the_title_blank("xyl") +
   labs(
     title = "Arvonlisä / työtunnit",
-    subtitle = "2020 $",
+    subtitle = "2020 $ (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   ) 
 
@@ -641,7 +638,7 @@ bind_rows(dat1, dat2) |>
   the_title_blank("xyl") +
   the_legend_bot() +
   labs(title = "Bruttoarvonlisä koko taloudessa",
-       subtitle = "Mrd. PPP dollaria 2020 tai 2017 hinnoin")
+       subtitle = "Mrd. PPP dollaria 2020 tai 2017 hinnoin (log-asteikko)")
 
 ```
 
@@ -708,7 +705,7 @@ dat_gva_ind|>
   the_title_blank("xyl") +
   labs(
     title = "Arvonlisä / työtunnit",
-    subtitle = "2017 $, valuuttakurssilla ja ostovoimakorjattuna",
+    subtitle = "2017 $, valuuttakurssilla ja ostovoimakorjattuna (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   )
 
@@ -739,7 +736,7 @@ dat_gva_ind|>
   the_title_blank("xyl") +
   labs(
     title = "Arvonlisä / työtunnit",
-    subtitle = "2017 $, valuuttakurssilla ja ostovoimakorjattuna",
+    subtitle = "2017 $, valuuttakurssilla ja ostovoimakorjattuna (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   ) 
 
@@ -769,7 +766,7 @@ dat_gva_ind|>
   the_title_blank("xyl") +
   labs(
     title = "Arvonlisä / työtunnit",
-    subtitle = "2017 $ ostovoimakorjattuna",
+    subtitle = "2017 $ ostovoimakorjattuna (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   ) 
 
@@ -801,7 +798,7 @@ dat_gva_ind|>
   the_title_blank("xyl") +
   labs(
     title = "Arvonlisä / työtunnit",
-    subtitle = "2017 $ ostovoimakorjattuna",
+    subtitle = "2017 $ ostovoimakorjattuna (log-asteikko)",
     caption = "Lähde: OECD, Tuottavuuslautakunta"
   ) 
 
