@@ -2,6 +2,7 @@
 
 library(tidyverse)
 library(pttdatahaku)
+library(countrycode)
 
 devtools::load_all()
 

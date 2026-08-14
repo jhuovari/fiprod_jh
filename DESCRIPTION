@@ -32,7 +32,7 @@ Imports:
     pttdatahaku
 Remotes: 
     jhuovari/pxwebtools,
-    jhuovari/ggcustom
+    jhuovari/ggcustom,
     pttry/pttdatahaku
 Config/testthat/edition: 3
 Depends: 
