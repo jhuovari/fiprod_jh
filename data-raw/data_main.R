@@ -10,7 +10,13 @@ devtools::load_all()
 geo_ea <- c("BE", "DE", "EE", "IE", "EL", "ES", "FR", "IT", "CY", "LV",
             "LT", "LU", "MT", "NL", "AT", "PT", "SI", "SK", "FI", "HR")
 
-usethis::use_data(geo_ea, overwrite = TRUE)
+geos_oecd <- c("EA20",
+               countrycode(c("FI", "SE", "NO", "DK", "BE", "NL", "AT", "PT",
+                             "DE", "IT", "FR", "ES", "US", "JP", "UK"),
+                           "eurostat", "iso3c"))
+
+
+usethis::use_data(geo_ea, geos_oecd, overwrite = TRUE)
 
 ## update
 

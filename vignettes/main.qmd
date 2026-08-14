@@ -461,9 +461,9 @@ dat_oecd_pdb_main |>
   filter(time >= "1995-01-01") |> 
   filter_recode(
     geo = geos,
-    measure = c("Työn tuottavuus" = "GVAHRS", "Tunnit per capita" = "HRSPOP"),
+    measure = c("GDPPOP", "Työn tuottavuus" = "GVAHRS", "Tunnit per capita" = "HRSPOP"),
     activity = c("Koko talous" = "_T"),
-    unit_measure = c("USD_PPP_H", "H_PS"),
+    unit_measure = c("USD_PPP" ,"USD_PPP_H", "H_PS"),
     price_base = c("LR", "_Z"),        
     conversion_type = c("PPP", "_Z")
   ) |> 
