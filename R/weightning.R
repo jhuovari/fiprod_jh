@@ -234,16 +234,21 @@ weight_function <- function(one_geo, x, geo, w_df, check_geos, mean_type){
   w_df2 <- w_df[w_df$geo_base == one_geo, ]
   # w <- w_df2[match(geo, w_df2$geo),]
   w <- suppressWarnings(left_join(tibble(geo = geo), w_df2, by = "geo"))
-  w$weight[is.na(w$weight)] <- 0
-  # check for weights
+
+  # check for weights (must run before NAs are zeroed, otherwise missing
+  # weights are silently treated as 0 and this check never fires)
   if (check_geos){
     if (any(is.na(w$weight) & w$geo != one_geo)) stop("Weights missing in ", one_geo, " for: ",
                                                       paste0(geo[is.na(w$weight) & w$geo != one_geo],
                                                              collapse = ", "))
   }
 
-  # If own weight missing also value is set to missing
+  # If own weight missing also value is set to missing (must also run
+  # before NAs are zeroed below)
   if (is.na(w$weight[w$geo == one_geo])) x[w$geo == one_geo] <- NA
+
+  w$weight[is.na(w$weight)] <- 0
+
   if (mean_type == "geom"){
     y <- weighted_gmean(x, w$weight, na.rm = TRUE)
   } else if (mean_type == "arit"){
