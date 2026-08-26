@@ -96,12 +96,18 @@ dat_oecd_na_ind <-
          price_base = factor(price_base, levels = c("V", "LR", "Y", "_Z"))) |>
   arrange(geo, measure, activity, price_base, time)
 
-# Eurostat reports value added in millions of national currency and employment
-# in thousands, the OECD table may use another multiplier. `source_overlap`
-# gives the ratio of the two on the countries both of them cover; set
-# `oecd_scale` from it so that the levels of the combined data are comparable
-# across countries. A growth correlation clearly below 1 means the two sources
-# are not measuring the same thing and needs looking into.
+# Eurostat does not use one multiplier throughout: value added and GDP are in
+# millions of national currency, employment, hours and population in thousands.
+# Dividing one by the other therefore does not yet give a per person or per hour
+# figure, so every ratio measure below is rescaled by the two multipliers and
+# comes out in OECD's units. The combined tables themselves stay in Eurostat
+# units, which is what `oecd_scale` converts the OECD side to.
+eurostat_mult <- c(GDP = 1e6, GVA = 1e6, EMP = 1e3, HRS = 1e3, POP = 1e3)
+
+# `source_overlap` gives the ratio of the two sources on the countries both of
+# them cover; set `oecd_scale` from it so that the levels of the combined data
+# are comparable across countries. A growth correlation clearly below 1 means
+# the two sources are not measuring the same thing and needs looking into.
 oecd_scale <- c(GVA = 1, EMP = 1000, HRS = 1000)
 
 source_overlap <-
@@ -162,8 +168,10 @@ dat_gva_ind_comb <-
   pivot_longer(c(cp, fp_2020_lc, fp_2020_ppp17, fp_2020_xr17),
                names_to = "vars", values_to = "GVA", names_transform = as_factor) |>
   left_join(labour_comb, by = c("time", "geo", "activity", "source")) |>
-  mutate(GVAEMP = GVA / EMP,
-         GVAHRS = GVA / HRS) |>
+  # value added is in millions and labour input in thousands, so the ratios need
+  # the two multipliers to come out per person and per hour
+  mutate(GVAEMP = unname(eurostat_mult["GVA"] / eurostat_mult["EMP"]) * GVA / EMP,
+         GVAHRS = unname(eurostat_mult["GVA"] / eurostat_mult["HRS"]) * GVA / HRS) |>
   pivot_longer(c(GVA, EMP, HRS, GVAEMP, GVAHRS),
                names_to = "measure", values_to = "values", names_transform = as_factor)
 
@@ -200,12 +208,6 @@ ratio_spec <- tibble::tribble(
   "GVAHRS",     "GVA",        "HRS",        "XDC_H",   c("V", "LR"),
   "HRSPOP",     "HRS",        "POP",        "H_PS",    "_Z"
 )
-
-# Eurostat does not use one multiplier throughout: value added and GDP are in
-# millions of national currency, employment, hours and population in thousands.
-# Dividing one by the other therefore does not yet give a per person or per hour
-# figure, and the ratio is rescaled so that it comes out in OECD's units.
-eurostat_mult <- c(GDP = 1e6, GVA = 1e6, EMP = 1e3, HRS = 1e3, POP = 1e3)
 
 make_ratio <- function(out_measure, num_measure, den_measure, out_unit, price_bases) {
   mult <- unname(eurostat_mult[num_measure] / eurostat_mult[den_measure])
@@ -341,3 +343,34 @@ if (nrow(no_ppp)) {
 }
 
 save_dat(dat_gdp_main, overwrite = TRUE)
+
+
+# The two combined tables build value added per hour by different routes, so
+# they are a check on each other's unit multipliers: local currency, 2020
+# prices, whole economy and business sector should give the same number.
+ratio_check <-
+  inner_join(
+    dat_gva_ind_comb |>
+      filter(measure == "GVAHRS", vars == "fp_2020_lc",
+             activity %in% c("_T", "BTNXL")) |>
+      select(time, geo, activity, ind = values),
+    dat_gdp_main |>
+      filter(measure == "GVAHRS", price_base == "LR", conversion_type == "_Z",
+             activity %in% c("_T", "BTNXL")) |>
+      select(time, geo, activity, main = values),
+    by = c("time", "geo", "activity")
+  ) |>
+  filter(is.finite(ind), is.finite(main), ind != 0) |>
+  mutate(ratio = main / ind)
+
+# A multiplier that is out of step shifts every observation by the same factor,
+# so the median is the statistic to look at; single countries can differ a
+# little because the OECD main and industry tables are separate vintages.
+ratio_median <- stats::median(ratio_check$ratio, na.rm = TRUE)
+
+if (nrow(ratio_check) && abs(log10(ratio_median)) > 0.01) {
+  warning("dat_gva_ind_comb and dat_gdp_main disagree on GVAHRS by a factor of ",
+          signif(ratio_median, 4),
+          ". Check `eurostat_mult` against the units of the source tables.",
+          call. = FALSE)
+}

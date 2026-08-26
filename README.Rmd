@@ -160,6 +160,15 @@ poikkeaa `oecd_scale`-vakiosta, jolloin kerroin asetetaan käsin. Tuloksena
 syntyvät taulut `dat_na_ind_comb` (yhdistetty toimialataulu) ja
 `dat_gva_ind_comb`, joka on samassa muodossa kuin `dat_gva_ind`.
 
+Yhdistetyt taulut ovat Eurostatin yksiköissä: arvonlisäys ja BKT miljoonina
+kansallista valuuttaa, työlliset, työtunnit ja väestö tuhansina. Eurostat ei siis
+käytä samaa kerrointa läpi aineiston, joten suhdeluvut (`GVAHRS`, `GVAEMP`,
+`GDPPOP`, `HRSPOP`) skaalataan `eurostat_mult`-kertoimilla, jotta ne tulevat
+OECD:n yksiköissä eli aidosti per tunti tai per henkilö. Taulut `dat_gva_ind_comb`
+ja `dat_gdp_main` laskevat arvonlisän työtuntia kohden eri reittejä, joten ne
+toimivat toistensa tarkistuksena: `data_main.R` vertaa niitä ja varoittaa, jos
+kertoimet ovat epätahdissa.
+
 ### Koko talouden yhdistäminen (`data-raw/get_eurostat_gdp.R`)
 
 Sama yhdistäminen tehdään myös OECD:n päätaululle `dat_oecd_pdb_main`.
