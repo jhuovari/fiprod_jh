@@ -21,7 +21,22 @@ geos_oecd <- c("EA20",
 geos_eurostat <- c("EA20", geo_ea, "SE", "DK", "NO")
 
 
-usethis::use_data(geo_ea, geos_oecd, geos_eurostat, overwrite = TRUE)
+# Peer group of the price competitiveness indicators. The old ficomp package
+# weighted against 17 countries; the US and Japan are not in Eurostat's national
+# accounts and are left out, so this is the same list without those two.
+# Switzerland is in Eurostat (EFTA) and is kept.
+geos_comp <- c("BE", "DK", "DE", "IE", "ES", "FR", "IT", "NL",
+               "AT", "FI", "SE", "NO", "PT", "EL", "CH")
+
+# What get_eurostat_ulc.R downloads. Same as the peer group for now.
+geos_comp_all <- geos_comp
+
+# Index base year of the competitiveness indicators, as in ficomp.
+comp_base_year <- 2010
+
+
+usethis::use_data(geo_ea, geos_oecd, geos_eurostat, geos_comp, geos_comp_all,
+                  comp_base_year, overwrite = TRUE)
 
 ## update
 
@@ -32,6 +47,7 @@ if (update){
   source("data-raw/get_oecd_pdb.R")
   source("data-raw/get_eurostat_na.R")
   source("data-raw/get_eurostat_gdp.R")
+  source("data-raw/get_eurostat_ulc.R")
   source("data-raw/get_exch.R")
 }
 
@@ -374,3 +390,107 @@ if (nrow(ratio_check) && abs(log10(ratio_median)) > 0.01) {
           ". Check `eurostat_mult` against the units of the source tables.",
           call. = FALSE)
 }
+
+
+## Price competitiveness ------------------------------------------------------
+#
+# The core of the old ficomp package (https://github.com/pttry/ficomp), which
+# the productivity board's competitiveness chapter was built on. Nominal and
+# real unit labour costs, their decomposition into productivity, compensation
+# and the exchange rate, and each of them relative to the peer group with the
+# ECFIN trade weights.
+#
+# ficomp weighted against 17 countries. Everything here comes from Eurostat, so
+# the US and Japan are missing and the peer group is the remaining 15
+# (`geos_comp`). `weight_index2()` renormalises the weights over whatever set it
+# is given, so the result is a well defined "relative to 15 peers" index, but it
+# is not numerically the published 17 country figure.
+
+dat_eurostat_ulc <- load_dat("dat_eurostat_ulc")
+
+# Every peer has to have the base year, or the index is undefined for it and the
+# weighted relatives of all the others turn into NA.
+ulc_base_missing <-
+  dat_eurostat_ulc |>
+  filter(geo %in% geos_comp, lubridate::year(time) == comp_base_year) |>
+  summarise(across(c(B1GQ__CLV20_MNAC, D1__CP_MNAC, D1__CP_MEUR,
+                     EMP_DC__THS_PER, SAL_DC__THS_PER),
+                   ~ sum(!is.finite(.x))),
+            .by = geo) |>
+  filter(if_any(where(is.numeric), ~ .x > 0))
+
+if (nrow(ulc_base_missing)) {
+  stop("No ", comp_base_year, " observation for: ",
+       paste(ulc_base_missing$geo, collapse = ", "),
+       ". Pick another `comp_base_year` or drop the country from `geos_comp`.")
+}
+
+# The indicators. `nulc_aper` is the entrepreneur adjusted measure the board
+# reports: compensation per employee against output per employed person.
+dat_ulc_lvl <-
+  dat_eurostat_ulc |>
+  filter(geo %in% geos_comp) |>
+  mutate(geo = factor(as.character(geo), levels = geos_comp)) |>
+  arrange(time) |>
+  mutate(
+    # Terms of trade adjusted GDP volume: exports revalued at import prices.
+    B1GQA__CLV20_MNAC = gdp_trading_gain(
+      gdp = B1GQ__CLV20_MNAC,
+      exports = P6__CLV20_MNAC, exports_cp = P6__CP_MNAC,
+      imports = P7__CLV20_MNAC, imports_cp = P7__CP_MNAC),
+
+    # Nominal unit labour costs, whole economy
+    nulc     = ind_ulc(D1__CP_MNAC, B1GQ__CLV20_MNAC, time = time, baseyear = comp_base_year),
+    nulc_eur = ind_ulc(D1__CP_MEUR, B1GQ__CLV20_MNAC, time = time, baseyear = comp_base_year),
+    nulc_va  = ind_ulc(D1__CP_MNAC, B1G__CLV20_MNAC,  time = time, baseyear = comp_base_year),
+
+    # Entrepreneur adjusted, in own and in common currency
+    nulc_aper = ind_ulc(D1__CP_MNAC, B1GQ__CLV20_MNAC,
+                        SAL_DC__THS_PER, EMP_DC__THS_PER, time, comp_base_year),
+    nulc_aper_eur = ind_ulc(D1__CP_MEUR, B1GQ__CLV20_MNAC,
+                            SAL_DC__THS_PER, EMP_DC__THS_PER, time, comp_base_year),
+
+    # ... and against the terms of trade adjusted output
+    nulc_aper_atot = ind_ulc(D1__CP_MNAC, B1GQA__CLV20_MNAC,
+                             SAL_DC__THS_PER, EMP_DC__THS_PER, time, comp_base_year),
+    nulc_aper_eur_atot = ind_ulc(D1__CP_MEUR, B1GQA__CLV20_MNAC,
+                                 SAL_DC__THS_PER, EMP_DC__THS_PER, time, comp_base_year),
+
+    # Real unit labour cost: the nominal one deflated by the GDP deflator, i.e.
+    # the labour share of output
+    rulc_aper = rebase_index(
+      nulc_aper / (B1GQ__CP_MNAC / B1GQ__CLV20_MNAC), time, comp_base_year),
+
+    # The three parts the nominal common currency measure decomposes into
+    lp_ind       = rebase_index(B1GQ__CLV20_MNAC / EMP_DC__THS_PER, time, comp_base_year),
+    d1_per_ind   = rebase_index(D1__CP_MNAC / SAL_DC__THS_PER, time, comp_base_year),
+    exch_eur_ind = rebase_index(D1__CP_MNAC / D1__CP_MEUR, time, comp_base_year),
+
+    .by = geo
+  )
+
+comp_vars <- c("nulc", "nulc_eur", "nulc_va",
+               "nulc_aper", "nulc_aper_eur",
+               "nulc_aper_atot", "nulc_aper_eur_atot",
+               "rulc_aper", "lp_ind", "d1_per_ind", "exch_eur_ind")
+
+# Relative to the peers: each country's index divided by the trade weighted
+# geometric mean of the others, times 100. Above 100 means costs have risen more
+# than in the peer countries since the base year.
+dat_ulc_comp <-
+  dat_ulc_lvl |>
+  select(time, geo, all_of(comp_vars)) |>
+  group_by(time) |>
+  mutate(across(all_of(comp_vars),
+                ~ weight_index2(.x, geo, time, geos = geos_comp,
+                                weight_df = weights_ecfin37),
+                .names = "rel__{col}")) |>
+  ungroup() |>
+  pivot_longer(-c(time, geo), names_to = "name", values_to = "v") |>
+  mutate(type = if_else(startsWith(name, "rel__"), "rel", "values"),
+         vars = factor(sub("^rel__", "", name), levels = comp_vars)) |>
+  select(time, geo, vars, type, v) |>
+  pivot_wider(names_from = type, values_from = v) |>
+  arrange(geo, vars, time)
+
+save_dat(dat_ulc_comp, overwrite = TRUE)

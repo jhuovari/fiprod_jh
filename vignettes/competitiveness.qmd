@@ -4,269 +4,246 @@ execute:
   warning: false
   message: false
 execute-dir: project
-format: 
+format:
   html:
     embed-resources: true
     code-fold: true
     code-summary: "Näytä koodi"
 ---
 
-KESKEN
-
 Päivitetty: `r Sys.Date()`
+
+Hintakilpailukyvyn mittarit ovat peräisin vanhasta
+[ficomp](https://github.com/pttry/ficomp)-paketista, jolla tuottavuuslautakunnan
+raportin kilpailukykyluku on aiemmin tehty. Ydin on suhteellinen
+yksikkötyökustannus: paljonko työvoimakustannus tuotettua yksikköä kohden on
+noussut Suomessa verrattuna verrokkimaihin.
+
+Laskenta on `data-raw/get_eurostat_ulc.R`- ja `data-raw/data_main.R`-skripteissä
+ja tulos taulussa `dat_ulc_comp`. Verrokkijoukko on `geos_comp`, ja painot ovat
+Euroopan komission (ECFIN) kauppapainot. ficomp painotti 17 maata; tässä ovat
+mukana ne 15, jotka löytyvät Eurostatista — Yhdysvallat ja Japani puuttuvat.
+Painot normitetaan mukana olevien maiden kesken, joten luku on hyvin määritelty,
+mutta ei numeerisesti sama kuin julkaistu 17 maan luku.
 
 ```{r}
 #| label: setup
-# library(fiprod)
 
-if (interactive()) devtools::load_all(".") else library(fiprod) 
+if (interactive()) devtools::load_all(".") else library(fiprod)
 
 library(tidyverse)
 library(ggcustom)
 library(pttdatahaku)
 
-
 set_gg(theme_fpb())
 
-lang <- "fi"
-
+dat_ulc_comp     <- load_dat("dat_ulc_comp")
 dat_oecd_pdb_ulc <- load_dat("dat_oecd_pdb_ulc")
-dat_oecd_ulcq <- load_dat("dat_oecd_ulcq")
 
+# Indeksin vertailujakso: keskiarvo 2000 - viimeisin = 100, kuten raportissa
+mean_range <- 2000:lubridate::year(max(dat_ulc_comp$time))
 
-geos <- rev(c(
-  "Suomi"         = "FI",
-  "Euroalue"      = "EA20",
-  "Ruotsi"        = "SE",
-  "Tanska"        = "DK",
-  "Saksa"         = "DE",
-  "USA"           = "US",
-  "muut"          = "Other"
-))
+geos <- c("Suomi" = "FI", "Ruotsi" = "SE", "Saksa" = "DE", "Ranska" = "FR",
+          "Itävalta" = "AT", "Espanja" = "ES")
 
-geos_width <- set_names(if_else(geos %in% c("FI"), 2, 1.3), names(geos))
-geos_colour <- set_names(c("grey80", rev(ggcustom_pal(length(geos) -1, "fpb"))), names(geos)) # muut luokalle harmaa
+# Poimii yhden tai useamman indikaattorin leveään muotoon ja indeksoi uudelleen
+pick <- function(vars_keep, col = "rel", geo_keep = "FI") {
+  dat_ulc_comp |>
+    filter(geo %in% geo_keep, vars %in% vars_keep) |>
+    select(time, geo, vars, arvo = all_of(col)) |>
+    mutate(arvo = rebase_index(arvo, time, mean_range), .by = c(geo, vars)) |>
+    mutate(vars = fct_recode(factor(vars, levels = vars_keep), !!!vars_keep))
+}
 
-time_range <- 2000:max(dat_oecd_pdb_ulc$time)
-
-library(pxwebtools)
-# pxw_print_code_full_query_c("https://pxdata.stat.fi/PxWeb/pxweb/fi/StatFin/StatFin__vtp/statfin_vtp_pxt_11yx.px")
-
-dat_statfin_vtp_pxt_11yx_px <- pxw_get_data(
-  url = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vtp/statfin_vtp_pxt_11yx.px",
-  query = 
-    list("Sektori"=c("S2"),
-       "Taloustoimi"=c("B11", "B9"),
-       "Vuosi"=c("*"),
-       "Tiedot"=c("bkt_suhde")))
+sub_ind <- paste0("Indeksi, keskiarvo ", min(mean_range), "–", max(mean_range), " = 100")
 ```
 
+## Suhteellinen yksikkötyökustannus
+
+Nimellinen yksikkötyökustannus suhteessa verrokkimaihin, omassa ja samassa
+valuutassa. Nousu tarkoittaa, että kustannukset ovat nousseet Suomessa
+verrokkimaita nopeammin.
 
 ```{r}
+#| label: fig-nulc-rel
 
-dat_oecd_pdb_ulc |> 
-  filter(
-    time >= time_range[1],
-         geo %in% c("FI", "US", "JP")) |> 
-  filter_recode(
-    measure = c("ULCE", "ULCH"),
-    unit_measure = "IX"
-  ) |> 
-  select(-unit_measure) |> 
-  mutate(values = rebase_index(values, time, time_range), .by = c(geo, measure)) |>
-  ggplot(aes(time, values, colour = geo)) +
-  facet_wrap(~measure) +
+pick(c("Omassa valuutassa" = "nulc_aper",
+       "Samassa valuutassa" = "nulc_aper_eur")) |>
+  ggplot(aes(time, arvo, colour = vars)) +
+  geom_hline(yintercept = 100, linewidth = 0.3) +
   geom_line() +
-  scale_linewidth_manual(values = geos_width) +
-  the_title_blank("xyl") +
-  labs(
-    title = "BKT per capita",
-    subtitle = "Indeksi, 2007 = 100",
-    caption = "Lähde: OECD, Tuottavuuslautakunta"
-  )
-
-```
-
-```{r}
-
-dat_oecd_pdb_ulc |> 
-  filter(
-    time >= "1995-01-01",
-         geo %in% geos) |> 
-  filter_recode(
-    measure = c("ULCE", "ULCH"),
-    unit_measure = "IX"
-  ) |> 
-  select(-unit_measure) |> 
-  ggplot(aes(time, rel, colour = geo)) +
-  facet_wrap(~measure) +
-  geom_line() +
-  scale_linewidth_manual(values = geos_width) +
-  the_title_blank("xyl") +
-  labs(
-    title = "BKT per capita",
-    subtitle = "Indeksi, 2007 = 100",
-    caption = "Lähde: OECD, Tuottavuuslautakunta"
-  )
-
-```
-
-```{r}
-
-dat_oecd_ulcq |> 
-  filter_recode(
-    geo = "FI",
-    measure = c("ULCE", "GDPEMP", "LCEMP")
-  ) |> 
-  ggplot(aes(time, rel, colour = measure)) +
-  geom_line()
-  
-```
-
-```{r}
-
-dat_oecd_pdb_ulc |> 
-  filter_recode(
-    geo = "FI",
-    var_id = c("ULCE-IX-V", "GDPEMP-XDC_PS-LR", "LCEMP-XDC_PS-V")
-    
-  ) |> 
-  ggplot(aes(time, rel, colour = measure)) +
-  geom_line()
-
-```
-
-```{r}
-
-dat_oecd_ulcq |> 
-  filter_recode(
-    geo = "FI",
-    measure = c(
-    "Yksikkötyökustannus" = "ULCE", 
-    "Työn tuottavuus" = "GDPEMP", 
-    "Työvoimakustannus" = "LCEMP")
-  ) |> 
-  mutate(time = lubridate::year(time)) |>
-  group_by(time, across(where(is.factor))) |> 
-  summarise(rel = mean(rel)) |> 
-  group_by(across(where(is.factor))) |> 
-  mutate(rel = rebase(rel, time, 1996:2024)) |>
-  ungroup() |> 
-  ggplot(aes(time, rel, colour = measure)) +
-  geom_line() +
-  the_title_blank("yxl") +
-  labs(
-    title = "Yksikkötyökustannus ja sen osatekijät, suhteellinen",
-    subtitle = "Suhteessa verrokkimaihin, indeksi, keskiarvo 1996-2004 = 100",
-    caption = "Lähde: OECD, Tuottavuuslautakunta"
-  )
-
-ggptt::ggsave_blog("ULC")
-
-```
-
-```{r}
-
-dat_oecd_ulcq |> 
-  filter_recode(
-    geo = c("FI", "SE", "DK", "US"),
-    measure = c(
-    "Työvoimakustannus" = "LCEMP")
-  ) |> 
-  mutate(time = lubridate::year(time)) |>
-  group_by(time, across(where(is.factor))) |> 
-  summarise(rel = mean(index15)) |> 
-  group_by(across(where(is.factor))) |> 
-  mutate(rel = rebase(rel, time, 2013)) |>
-  ungroup() |> 
-  ggplot(aes(time, rel, colour = geo)) +
-  geom_line() +
-    geom_text(
-    data = . %>% filter(time == 2024),
-    aes(label = rel),
-    hjust = -0.1
-  ) +
-  the_title_blank("yxl") +
-  labs(
-    title = "Yksikkötyökustannus ja sen osatekijät, suhteellinen",
-    subtitle = "Suhteessa verrokkimaihin, indeksi keskiarvo 1996-2004 = 100",
-    caption = "Lähde: OECD, Tuottavuuslautakunta"
-  )
-```
-
-
-```{r}
-
-dat_oecd_pdb_ulc |> 
-  filter(
-    time >= "1995-01-01",
-         geo %in% geos) |> 
-  filter_recode(
-    var_id = c("LCHRS-XDC_H-V", "LCHRS-XDC_H-V", "GDPHRS-XDC_H-LR")
-  ) |> 
-  select(-unit_measure) |> 
-  ggplot(aes(time, rel, colour = geo)) +
-  facet_wrap(~measure) +
-  geom_line() +
-  scale_linewidth_manual(values = geos_width) +
-  the_title_blank("xyl") +
-  labs(
-    title = "BKT per capita",
-    subtitle = "Indeksi, 2007 = 100",
-    caption = "Lähde: OECD, Tuottavuuslautakunta"
-  )
-
-```
-
-```{r}
-
-dat_statfin_vtp_pxt_11yx_px |> 
-  filter_recode(
-    taloustoimi = c(
-      "Tavaroiden ja palveluiden tase" = "B11",
-      "Vaihtotase" = "B9"
-    )
-  ) |> 
-  # filter(time >= "1995-01-01") |> select(time, taloustoimi, values) |> spread(taloustoimi, values) |> pttdatahaku::conc()
-  ggplot(aes(time, -values, colour = taloustoimi)) +
-  geom_line() +
-  geom_hline(yintercept = 0) +
-  scale_y_continuous(labels = scales::label_number(decimal.mark = ",")) +
-  the_title_blank("xly") +
+  the_title_blank("xl") +
   the_legend_bot() +
-  labs(
-    title = "Ulkoinen tasapain",
-    subtitle = "Suhteessa BKT:seen, %",
-    caption = "Lähde: Tilastokeskus"
-  )
-
-ggptt::ggsave_blog("Ulkoinen tasapain")
-
+  labs(title = "Suhteellinen nimellinen yksikkötyökustannus",
+       subtitle = sub_ind, y = NULL,
+       caption = "Lähde: Eurostat, Tuottavuuslautakunta")
 ```
+
+## Osatekijät
+
+Yksikkötyökustannus on määritelmän mukaan palkansaajakorvaukset työntekijää
+kohden jaettuna työn tuottavuudella, ja samassa valuutassa mitattuna siihen
+vaikuttaa lisäksi valuuttakurssi. Valuuttakurssi on käännetty niin, että nousu
+tarkoittaa kaikilla kolmella kustannuskilpailukyvyn heikkenemistä.
 
 ```{r}
+#| label: fig-decomp
 
-
-dat_oecd_ulcq |> 
-  filter_recode(
-    geo = c("FI", "SE"),
-    measure = c(
-    "Yksikkötyökustannus" = "ULCE", 
-    "Työn tuottavuus" = "GDPEMP", 
-    "Työvoimakustannus" = "LCEMP")
-  ) |> 
-  mutate(time = lubridate::year(time)) |>
-  group_by(time, across(where(is.factor))) |> 
-  summarise(index15 = mean(index15)) |>
-  ungroup() %>% 
-  ggplot(aes(time, index15, colour = geo)) +
-  facet_wrap(~measure) +
+pick(c("Tuottavuus" = "lp_ind",
+       "Palkansaajakorvaukset" = "d1_per_ind",
+       "Valuuttakurssi" = "exch_eur_ind")) |>
+  mutate(arvo = if_else(vars == "Valuuttakurssi", 100^2 / arvo, arvo)) |>
+  ggplot(aes(time, arvo, colour = vars)) +
+  geom_hline(yintercept = 100, linewidth = 0.3) +
   geom_line() +
-  the_title_blank("yxl") +
-  labs(
-    title = "Yksikkötyökustannus ja sen osatekijät, suhteellinen",
-    subtitle = "Suhteessa verrokkimaihin, indeksi, keskiarvo 1996-2004 = 100",
-    caption = "Lähde: OECD, Tuottavuuslautakunta"
-  )
+  the_title_blank("xl") +
+  the_legend_bot() +
+  labs(title = "Suhteellisen yksikkötyökustannuksen osatekijät",
+       subtitle = sub_ind, y = NULL,
+       caption = "Lähde: Eurostat, Tuottavuuslautakunta")
 ```
 
+## Vaihtosuhdekorjattu
+
+Reaalinen BKT mittaa sitä mitä maa tuottaa, ei sitä mitä se tuotannollaan saa
+ostettua. Kun vientihinnat nousevat tuontihintoja nopeammin, sama tuotanto
+riittää suurempaan tuontiin. Vaihtosuhdekorjattu mittari arvottaa viennin
+tuontihinnoin, jolloin se kertoo onko kustannustaso kestävä niillä hinnoilla,
+joita viennistä todella saadaan.
+
+```{r}
+#| label: fig-atot
+
+pick(c("Vaihtosuhdekorjattu" = "nulc_aper_eur_atot",
+       "Tavallinen" = "nulc_aper_eur")) |>
+  ggplot(aes(time, arvo, colour = vars)) +
+  geom_hline(yintercept = 100, linewidth = 0.3) +
+  geom_line() +
+  the_title_blank("xl") +
+  the_legend_bot() +
+  labs(title = "Suhteellinen yksikkötyökustannus, vaihtosuhdekorjattu",
+       subtitle = sub_ind, y = NULL,
+       caption = "Lähde: Eurostat, Tuottavuuslautakunta")
+```
+
+## Eri määritelmät
+
+```{r}
+#| label: fig-definitions
+
+pick(c("Nimellinen, omassa valuutassa" = "nulc_aper",
+       "Nimellinen, samassa valuutassa" = "nulc_aper_eur",
+       "Nimellinen, vaihtosuhdekorjattu" = "nulc_aper_eur_atot",
+       "Reaalinen" = "rulc_aper")) |>
+  ggplot(aes(time, arvo, colour = vars)) +
+  geom_hline(yintercept = 100, linewidth = 0.3) +
+  geom_line() +
+  the_title_blank("xl") +
+  the_legend_bot() +
+  guides(colour = guide_legend(nrow = 2)) +
+  labs(title = "Suomen suhteellinen yksikkötyökustannus eri määritelmillä",
+       subtitle = sub_ind, y = NULL,
+       caption = "Lähde: Eurostat, Tuottavuuslautakunta")
+```
+
+Reaalinen yksikkötyökustannus on nimellinen jaettuna BKT:n hintaindeksillä, eli
+käytännössä työn tulo-osuus. Se ei liiku valuuttakurssin mukana ja kertoo
+enemmän tulonjaosta kuin kilpailukyvystä.
+
+Yrittäjäkorjaus tarkoittaa, että palkansaajakorvaukset suhteutetaan
+palkansaajiin ja tuotanto kaikkiin työllisiin. Ilman sitä yrittäjien työpanos
+jää kustannuksista pois mutta on tuotannossa mukana.
+
+```{r}
+#| label: fig-adjust
+
+pick(c("Yrittäjäkorjattu" = "nulc_aper",
+       "Korjaamaton" = "nulc",
+       "Arvonlisäyksestä" = "nulc_va")) |>
+  ggplot(aes(time, arvo, colour = vars)) +
+  geom_hline(yintercept = 100, linewidth = 0.3) +
+  geom_line() +
+  the_title_blank("xl") +
+  the_legend_bot() +
+  labs(title = "Nimellinen yksikkötyökustannus, laskutavan vaikutus",
+       subtitle = sub_ind, y = NULL,
+       caption = "Lähde: Eurostat, Tuottavuuslautakunta")
+```
+
+## Verrokkimaat
+
+```{r}
+#| label: fig-geos
+
+pick(c("Samassa valuutassa" = "nulc_aper_eur"), geo_keep = geos) |>
+  mutate(geo = fct_recode(factor(geo, levels = geos), !!!geos),
+         korostus = geo == "Suomi") |>
+  ggplot(aes(time, arvo, colour = geo, linewidth = korostus)) +
+  geom_hline(yintercept = 100, linewidth = 0.3) +
+  geom_line() +
+  scale_linewidth_manual(values = c(`FALSE` = 0.5, `TRUE` = 1.2), guide = "none") +
+  the_title_blank("xl") +
+  the_legend_bot() +
+  labs(title = "Suhteellinen nimellinen yksikkötyökustannus",
+       subtitle = sub_ind, y = NULL,
+       caption = "Lähde: Eurostat, Tuottavuuslautakunta")
+```
+
+## Vertailu OECD:n julkaisemaan sarjaan
+
+OECD julkaisee yksikkötyökustannuksen valmiina (`ULCE`, työntekijää kohden).
+Tässä laskettu `nulc_aper` on sama käsite Eurostatin luvuista, joten sarjojen
+pitäisi liikkua samalla tavalla. Poikkeama kertoo joko lähteiden erosta tai
+laskentavirheestä.
+
+```{r}
+#| label: fig-oecd-check
+
+bind_rows(
+  dat_ulc_comp |>
+    filter(vars == "nulc_aper", geo %in% geos) |>
+    transmute(time, geo = as.character(geo), values, lahde = "Eurostat (nulc_aper)"),
+  dat_oecd_pdb_ulc |>
+    filter(measure == "ULCE", unit_measure == "IX") |>
+    transmute(time = as.Date(paste0(time, "-01-01")),
+              geo = as.character(geo), values, lahde = "OECD (ULCE)") |>
+    filter(geo %in% geos)
+) |>
+  mutate(values = rebase_index(values, time, mean_range), .by = c(geo, lahde)) |>
+  ggplot(aes(time, values, colour = lahde)) +
+  facet_wrap(~ geo) +
+  geom_line() +
+  the_title_blank("xl") +
+  the_legend_bot() +
+  labs(title = "Nimellinen yksikkötyökustannus, omassa valuutassa",
+       subtitle = sub_ind, y = NULL,
+       caption = "Lähde: Eurostat, OECD, Tuottavuuslautakunta")
+```
+
+## Ulkoinen tasapaino
+
+```{r}
+#| label: fig-balance
+
+dat_statfin_vtp <- pxwebtools::pxw_get_data(
+  url = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vtp/statfin_vtp_pxt_11yx.px",
+  query = list("Sektori" = c("S2"),
+               "Taloustoimi" = c("B11", "B9"),
+               "Vuosi" = c("*"),
+               "Tiedot" = c("bkt_suhde")))
+
+dat_statfin_vtp |>
+  filter_recode(
+    taloustoimi = c("Tavaroiden ja palveluiden tase" = "B11",
+                    "Vaihtotase" = "B9")
+  ) |>
+  ggplot(aes(time, -values, colour = taloustoimi)) +
+  geom_hline(yintercept = 0, linewidth = 0.3) +
+  geom_line() +
+  scale_y_continuous(labels = scales::label_number(decimal.mark = ",")) +
+  the_title_blank("xl") +
+  the_legend_bot() +
+  labs(title = "Ulkoinen tasapaino",
+       subtitle = "Suhteessa BKT:seen, %", y = NULL,
+       caption = "Lähde: Tilastokeskus")
+```
