@@ -7,14 +7,16 @@
 ## the whole economy (`_T`) and the business sector (`BTNXL`) come from
 ## dat_eurostat_na_ind, and data-raw/data_main.R puts the two together.
 ##
-## Population is not published as such in nama_10_gdp, so it is backed out from
-## GDP in millions of euro and GDP in euro per capita. Eurostat rounds the per
-## capita figure, which leaves a rounding error of the order of 0.01 % in the
-## population level; it cancels out of any index or growth rate.
+## Population is not published as such, so it is backed out from GDP in millions
+## of euro (nama_10_gdp) and GDP in euro per capita (nama_10_pc - the per capita
+## units are in that table, not in nama_10_gdp). Eurostat rounds the per capita
+## figure, which leaves a rounding error of the order of 0.01 % in the population
+## level; it cancels out of any index or growth rate.
 ##
-## Units follow Eurostat: GDP is in millions of national currency and population
-## in persons. data_main.R checks the multiplier against the OECD with
-## compare_sources().
+## Units follow Eurostat: GDP is in millions of national currency, and population
+## in thousands of persons, matching the thousands Eurostat uses for employment
+## and hours in get_eurostat_na.R. data_main.R checks the multipliers against the
+## OECD with compare_sources().
 
 library(tidyverse)
 library(eurostat)
@@ -32,8 +34,10 @@ key_na_item <- c("B1GQ" = "GDP", "B1G" = "GVA")
 # Eurostat unit -> OECD PRICE_BASE, as in get_eurostat_na.R
 key_price_base <- c("CP_MNAC" = "V", "CLV20_MNAC" = "LR", "PYP_MNAC" = "Y")
 
-# Units needed to back out population
-key_pop_unit <- c("CP_MEUR", "CP_EUR_HAB")
+# Units needed to back out population. GDP in millions of euro is in
+# nama_10_gdp, GDP in euro per capita only in nama_10_pc.
+key_pop_unit_gdp <- "CP_MEUR"
+key_pop_unit_pc  <- "CP_EUR_HAB"
 
 eurostat_ref_year <- 2020
 
@@ -45,17 +49,28 @@ dat_gdp_0 <- get_eurostat(
   time_format = "date",
   cache = FALSE,
   filters = list(na_item = names(key_na_item),
-                 unit = c(names(key_price_base), key_pop_unit))
+                 unit = c(names(key_price_base), key_pop_unit_gdp))
+)
+
+dat_pc_0 <- get_eurostat(
+  "nama_10_pc",
+  time_format = "date",
+  cache = FALSE,
+  filters = list(na_item = "B1GQ", unit = key_pop_unit_pc)
 )
 
 
 ## Reshape --------------------------------------------------------------------
 
-dat_gdp_1 <-
-  dat_gdp_0 |>
-  rename(any_of(c(time = "TIME_PERIOD"))) |>
-  select(-any_of("freq")) |>
-  mutate(geo = as_factor(as.character(geo)))
+tidy_eurostat_raw <- function(x) {
+  x |>
+    rename(any_of(c(time = "TIME_PERIOD"))) |>
+    select(-any_of("freq")) |>
+    mutate(geo = as_factor(as.character(geo)))
+}
+
+dat_gdp_1 <- tidy_eurostat_raw(dat_gdp_0)
+dat_pc_1  <- tidy_eurostat_raw(dat_pc_0)
 
 # Gross domestic product and total gross value added, in national currency
 dat_gdp_nac <-
@@ -71,20 +86,25 @@ dat_gdp_nac <-
     values
   )
 
-# Population, backed out from GDP in euro and GDP per capita in euro
+# Population, backed out from GDP in millions of euro (nama_10_gdp) and GDP in
+# euro per capita (nama_10_pc). Reported in thousands of persons, the unit
+# Eurostat uses for employment, so that hours per capita comes out per person.
 dat_pop <-
   dat_gdp_1 |>
-  filter(na_item == "B1GQ", unit %in% key_pop_unit) |>
-  select(time, geo, unit, values) |>
-  pivot_wider(names_from = unit, values_from = values) |>
+  filter(na_item == "B1GQ", unit == key_pop_unit_gdp) |>
+  select(time, geo, CP_MEUR = values) |>
+  inner_join(
+    select(filter(dat_pc_1, unit == key_pop_unit_pc), time, geo, CP_EUR_HAB = values),
+    by = c("time", "geo")
+  ) |>
   transmute(
     time,
     geo,
     measure      = "POP",
     activity     = "_T",
-    unit_measure = "PS",                 # persons
+    unit_measure = "PS",                 # thousands of persons
     price_base   = "_Z",
-    values       = CP_MEUR * 1e6 / CP_EUR_HAB
+    values       = (CP_MEUR * 1e6 / CP_EUR_HAB) / 1e3
   )
 
 dat_eurostat_na_gdp <-
@@ -103,7 +123,7 @@ save_dat(dat_eurostat_na_gdp, overwrite = TRUE)
 
 ## Checks ---------------------------------------------------------------------
 
-if (interactive()) {
+if (FALSE) {
 
   check_factor_levels(dat_eurostat_na_gdp, drop_vars = "geo") |> print(n = Inf)
 

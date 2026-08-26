@@ -201,7 +201,15 @@ ratio_spec <- tibble::tribble(
   "HRSPOP",     "HRS",        "POP",        "H_PS",    "_Z"
 )
 
+# Eurostat does not use one multiplier throughout: value added and GDP are in
+# millions of national currency, employment, hours and population in thousands.
+# Dividing one by the other therefore does not yet give a per person or per hour
+# figure, and the ratio is rescaled so that it comes out in OECD's units.
+eurostat_mult <- c(GDP = 1e6, GVA = 1e6, EMP = 1e3, HRS = 1e3, POP = 1e3)
+
 make_ratio <- function(out_measure, num_measure, den_measure, out_unit, price_bases) {
+  mult <- unname(eurostat_mult[num_measure] / eurostat_mult[den_measure])
+
   num <- dat_eurostat_main_lvl |>
     filter(measure == num_measure, price_base %in% price_bases) |>
     select(time, geo, activity, price_base, num = values)
@@ -214,7 +222,7 @@ make_ratio <- function(out_measure, num_measure, den_measure, out_unit, price_ba
     transmute(time, geo,
               measure = out_measure, activity,
               unit_measure = out_unit, price_base,
-              values = num / den)
+              values = mult * num / den)
 }
 
 dat_eurostat_main <-
@@ -233,15 +241,15 @@ dat_oecd_main_nac <-
   distinct(time, geo, measure, activity, unit_measure, price_base, .keep_all = TRUE) |>
   select(time, geo, measure, activity, unit_measure, price_base, values)
 
-# Multipliers, as for the industry data. The ratio measures inherit the scale of
-# their numerator and denominator, so only the levels have to be set.
-oecd_scale_main <- c(GDP = 1, GVA = 1, EMP = 1, HRS = 1, POP = 1)
+# Multipliers, as for the industry data: OECD counts persons and hours in
+# millions, Eurostat in thousands, so the OECD levels are multiplied by a
+# thousand. Population is assumed to follow employment and hours; if it does not,
+# the check below says so. The ratio measures are already built in OECD's own
+# units above, so the OECD side of them needs no conversion.
+oecd_scale_main <- c(GDP = 1, GVA = 1, EMP = 1000, HRS = 1000, POP = 1000)
 oecd_scale_main <- c(
   oecd_scale_main,
-  GDPPOP = unname(oecd_scale_main["GDP"] / oecd_scale_main["POP"]),
-  HRSPOP = unname(oecd_scale_main["HRS"] / oecd_scale_main["POP"]),
-  GVAEMP = unname(oecd_scale_main["GVA"] / oecd_scale_main["EMP"]),
-  GVAHRS = unname(oecd_scale_main["GVA"] / oecd_scale_main["HRS"])
+  GDPPOP = 1, HRSPOP = 1, GVAEMP = 1, GVAHRS = 1
 )
 
 source_overlap_main <-
