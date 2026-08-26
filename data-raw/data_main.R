@@ -102,7 +102,7 @@ dat_oecd_na_ind <-
 # `oecd_scale` from it so that the levels of the combined data are comparable
 # across countries. A growth correlation clearly below 1 means the two sources
 # are not measuring the same thing and needs looking into.
-oecd_scale <- c(GVA = 1, EMP = 1, HRS = 1)
+oecd_scale <- c(GVA = 1, EMP = 1000, HRS = 1000)
 
 source_overlap <-
   compare_sources(dat_eurostat_na_ind, dat_oecd_na_ind,

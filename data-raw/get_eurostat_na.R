@@ -149,7 +149,7 @@ save_dat(dat_eurostat_na_ind, overwrite = TRUE)
 
 ## Checks ---------------------------------------------------------------------
 
-if (interactive()) {
+if (FALSE) {
 
   # Every activity should be there for every country and year.
   check_factor_levels(dat_eurostat_na_ind, drop_vars = "geo") |> print(n = Inf)
