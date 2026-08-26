@@ -161,10 +161,14 @@ syntyvät taulut `dat_na_ind_comb` (yhdistetty toimialataulu) ja
 
 Sama yhdistäminen tehdään myös OECD:n päätaululle `dat_oecd_pdb_main`.
 `get_eurostat_gdp.R` hakee Eurostatin `nama_10_gdp`-taulusta bruttokansantuotteen
-(`B1GQ`) käyvin hinnoin, edellisen vuoden hinnoin ja kiinteähintaisena sekä
-väestön, joka johdetaan BKT:sta miljoonina euroina ja BKT:sta euroa per asukas
-(Eurostat pyöristää per capita -luvun, joten väestön tasoon jää noin 0,01 %:n
-pyöristysvirhe, joka kumoutuu indekseistä ja kasvuvauhdeista). Arvonlisäys,
+(`B1GQ`) käyvin hinnoin, edellisen vuoden hinnoin ja kiinteähintaisena. Väestöä ei
+julkaista sellaisenaan, vaan se johdetaan BKT:sta miljoonina euroina (`CP_MEUR`,
+`nama_10_gdp`) ja BKT:sta euroa per asukas (`CP_EUR_HAB`) — per capita -yksiköt
+ovat `nama_10_pc`-taulussa, eivät `nama_10_gdp`:ssä. Eurostat pyöristää per
+capita -luvun, joten väestön tasoon jää noin 0,01 %:n pyöristysvirhe, joka
+kumoutuu indekseistä ja kasvuvauhdeista. Väestö raportoidaan tuhansina
+henkilöinä, samassa yksikössä kuin Eurostatin työlliset ja työtunnit.
+Arvonlisäys,
 työlliset ja työtunnit koko taloudelle (`_T`) ja yrityssektorille (`BTNXL`)
 otetaan suoraan taulusta `dat_eurostat_na_ind`, joten niitä ei haeta uudestaan.
 Tulos on `dat_eurostat_na_gdp`.
