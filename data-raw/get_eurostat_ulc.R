@@ -52,7 +52,7 @@ dat_gdp_ulc_0 <- get_eurostat(
   "nama_10_gdp",
   time_format = "date",
   cache = FALSE,
-  filters = list(na_item = key_na_item, unit = key_unit_gdp, geo = geos_comp_all)
+  filters = list(na_item = key_na_item, unit = key_unit_gdp, geo = geos_comp_es)
 )
 
 dat_emp_ulc_0 <- get_eurostat(
@@ -60,7 +60,7 @@ dat_emp_ulc_0 <- get_eurostat(
   time_format = "date",
   cache = FALSE,
   filters = list(na_item = key_na_item_e, unit = key_unit_e,
-                 nace_r2 = "TOTAL", geo = geos_comp_all)
+                 nace_r2 = "TOTAL", geo = geos_comp_es)
 )
 
 
@@ -81,8 +81,8 @@ dat_eurostat_ulc <-
   mutate(geo = as.character(geo)) |>
   unite("vars", na_item, unit, sep = "__") |>
   pivot_wider(names_from = vars, values_from = values) |>
-  filter(geo %in% geos_comp_all) |>
-  mutate(geo = factor(geo, levels = geos_comp_all)) |>
+  filter(geo %in% geos_comp_es) |>
+  mutate(geo = factor(geo, levels = geos_comp_es)) |>
   arrange(geo, time)
 
 save_dat(dat_eurostat_ulc, overwrite = TRUE)

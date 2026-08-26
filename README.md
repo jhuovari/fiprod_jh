@@ -234,8 +234,17 @@ Kaksi funktiota on paketissa: `ind_ulc()` laskee yksikkötyökustannusindeksin j
 lasketaan `weight_index2()`-funktiolla ECFIN:n kauppapainoilla
 (`weights_ecfin37`).
 
-Verrokkijoukko `geos_comp` on 15 maata. ficomp painotti 17:ää, mutta
-Yhdysvallat ja Japani eivät ole Eurostatin kansantalouden tilinpidossa;
-Sveitsi on (EFTA) ja on mukana. `weight_index2()` normittaa painot mukana
-olevien maiden kesken, joten luku on hyvin määritelty, mutta ei numeerisesti
-sama kuin julkaistu 17 maan luku. Kuviot ovat vinjetissä `competitiveness.qmd`.
+Verrokkijoukko `geos_comp` on ficompin 17 maata. Niistä 15 (`geos_comp_es`)
+tulee Eurostatista, Sveitsi mukaan lukien (EFTA). Yhdysvallat ja Japani
+(`geos_comp_oecd`) eivät ole Eurostatin kansantalouden tilinpidossa, joten ne
+otetaan OECD:n tuottavuustietokannasta: `nulc_aper` lasketaan sarjoista `LCEMP`
+ja `GDPEMP`, reaalinen `rulc_aper` niiden käypä- ja kiinteähintaisista
+versioista, ja valuuttakurssi taulusta `exh_eur_a`. Yksikkötyökustannus
+rakennetaan osatekijöistä eikä oteta OECD:n julkaisemaa `ULCE`-sarjaa, jotta
+hajotelman identiteetti `nulc_aper = 100 × d1_per_ind / lp_ind` pitää tarkasti
+kaikilla mailla; `data_main.R` vertaa tulosta `ULCE`:en ajon yhteydessä.
+
+OECD:n taulussa ei ole vientiä eikä tuontia, joten vaihtosuhdekorjatut ja
+yrittäjäkorjaamattomat mittarit ovat vain Eurostat-mailla ja ne painotetaan
+15 maan kesken. Taulun `peers`-sarake kertoo kumpaa joukkoa vasten kukin
+suhdeluku on laskettu. Kuviot ovat vinjetissä `competitiveness.qmd`.

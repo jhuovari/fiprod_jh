@@ -20,11 +20,13 @@ yksikkötyökustannus: paljonko työvoimakustannus tuotettua yksikköä kohden o
 noussut Suomessa verrattuna verrokkimaihin.
 
 Laskenta on `data-raw/get_eurostat_ulc.R`- ja `data-raw/data_main.R`-skripteissä
-ja tulos taulussa `dat_ulc_comp`. Verrokkijoukko on `geos_comp`, ja painot ovat
-Euroopan komission (ECFIN) kauppapainot. ficomp painotti 17 maata; tässä ovat
-mukana ne 15, jotka löytyvät Eurostatista — Yhdysvallat ja Japani puuttuvat.
-Painot normitetaan mukana olevien maiden kesken, joten luku on hyvin määritelty,
-mutta ei numeerisesti sama kuin julkaistu 17 maan luku.
+ja tulos taulussa `dat_ulc_comp`. Verrokkijoukko `geos_comp` on ficompin 17
+maata ja painot Euroopan komission (ECFIN) kauppapainot. Näistä 15 tulee
+Eurostatista; Yhdysvallat ja Japani tulevat OECD:n tuottavuustietokannasta,
+jossa on yksikkötyökustannus ja sen osatekijät mutta ei vientiä eikä tuontia.
+Niillä ei siksi ole vaihtosuhdekorjausta eikä yrittäjäkorjaamatonta mittaria, ja
+ne mittarit painotetaan 15 Eurostat-maan kesken. Taulun `peers`-sarake kertoo,
+kumpaa joukkoa vasten kukin suhdeluku on laskettu.
 
 ```{r}
 #| label: setup
@@ -192,9 +194,11 @@ pick(c("Samassa valuutassa" = "nulc_aper_eur"), geo_keep = geos) |>
 ## Vertailu OECD:n julkaisemaan sarjaan
 
 OECD julkaisee yksikkötyökustannuksen valmiina (`ULCE`, työntekijää kohden).
-Tässä laskettu `nulc_aper` on sama käsite Eurostatin luvuista, joten sarjojen
-pitäisi liikkua samalla tavalla. Poikkeama kertoo joko lähteiden erosta tai
-laskentavirheestä.
+Eurostat-mailla `nulc_aper` on sama käsite eri lähteestä laskettuna, joten
+sarjojen pitäisi liikkua samalla tavalla; poikkeama kertoo joko lähteiden erosta
+tai laskentavirheestä. Yhdysvalloille ja Japanille luku tulee samasta OECD:n
+tietokannasta (`LCEMP` jaettuna `GDPEMP`:llä), joten niillä yhteneväisyys on
+rakenteellinen — `data_main.R` tulostaa sen erotuksen ajon yhteydessä.
 
 ```{r}
 #| label: fig-oecd-check
