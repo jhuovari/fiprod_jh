@@ -31,6 +31,7 @@ if (update){
 
   source("data-raw/get_oecd_pdb.R")
   source("data-raw/get_eurostat_na.R")
+  source("data-raw/get_eurostat_gdp.R")
   source("data-raw/get_exch.R")
 }
 
@@ -167,3 +168,166 @@ dat_gva_ind_comb <-
                names_to = "measure", values_to = "values", names_transform = as_factor)
 
 save_dat(dat_gva_ind_comb, overwrite = TRUE)
+
+
+## Whole economy: Eurostat and OECD combined ---------------------------------
+#
+# The same combination for dat_oecd_pdb_main. GDP and population come from
+# nama_10_gdp (data-raw/get_eurostat_gdp.R); value added, employment and hours
+# for the whole economy (`_T`) and the business sector (`BTNXL`) are already in
+# dat_eurostat_na_ind and are reused here. (nama_10_gdp's B1G is the same series
+# as the industry table's `_T` value added and is kept only as a cross-check.)
+
+dat_eurostat_na_gdp <- load_dat("dat_eurostat_na_gdp")
+
+dat_eurostat_main_lvl <-
+  bind_rows(
+    filter(dat_eurostat_na_gdp, measure %in% c("GDP", "POP")),
+    filter(dat_eurostat_na_ind,
+           activity %in% c("_T", "BTNXL"),
+           measure %in% c("GVA", "EMP", "HRS"))
+  ) |>
+  mutate(across(c(measure, activity, unit_measure, price_base), as.character))
+
+# The ratio measures OECD publishes. Population only exists for `_T`, so the
+# inner join drops GDPPOP and HRSPOP for BTNXL by itself.
+ratio_spec <- tibble::tribble(
+  ~out_measure, ~num_measure, ~den_measure, ~out_unit, ~price_bases,
+  "GDPPOP",     "GDP",        "POP",        "XDC",     c("V", "LR"),
+  "GVAEMP",     "GVA",        "EMP",        "XDC_PS",  c("V", "LR"),
+  "GVAHRS",     "GVA",        "HRS",        "XDC_H",   c("V", "LR"),
+  "HRSPOP",     "HRS",        "POP",        "H_PS",    "_Z"
+)
+
+make_ratio <- function(out_measure, num_measure, den_measure, out_unit, price_bases) {
+  num <- dat_eurostat_main_lvl |>
+    filter(measure == num_measure, price_base %in% price_bases) |>
+    select(time, geo, activity, price_base, num = values)
+  den <- dat_eurostat_main_lvl |>
+    filter(measure == den_measure) |>
+    select(time, geo, activity, den = values)
+
+  num |>
+    inner_join(den, by = c("time", "geo", "activity")) |>
+    transmute(time, geo,
+              measure = out_measure, activity,
+              unit_measure = out_unit, price_base,
+              values = num / den)
+}
+
+dat_eurostat_main <-
+  bind_rows(dat_eurostat_main_lvl, purrr::pmap_dfr(ratio_spec, make_ratio)) |>
+  arrange(geo, measure, activity, price_base, time)
+
+# OECD side in national currency. OECD publishes no market exchange rate series
+# for the US, because for the US the PPP series already are in USD.
+dat_oecd_main_nac <-
+  dat_oecd_pdb_main |>
+  filter(conversion_type %in% c("_Z", "PPP")) |>
+  mutate(unit_measure = sub("^USD_PPP", "XDC", as.character(unit_measure)),
+         across(c(geo, measure, activity, price_base, conversion_type), as.character)) |>
+  filter(conversion_type == "_Z" | geo == "US") |>
+  arrange(match(conversion_type, c("_Z", "PPP"))) |>
+  distinct(time, geo, measure, activity, unit_measure, price_base, .keep_all = TRUE) |>
+  select(time, geo, measure, activity, unit_measure, price_base, values)
+
+# Multipliers, as for the industry data. The ratio measures inherit the scale of
+# their numerator and denominator, so only the levels have to be set.
+oecd_scale_main <- c(GDP = 1, GVA = 1, EMP = 1, HRS = 1, POP = 1)
+oecd_scale_main <- c(
+  oecd_scale_main,
+  GDPPOP = unname(oecd_scale_main["GDP"] / oecd_scale_main["POP"]),
+  HRSPOP = unname(oecd_scale_main["HRS"] / oecd_scale_main["POP"]),
+  GVAEMP = unname(oecd_scale_main["GVA"] / oecd_scale_main["EMP"]),
+  GVAHRS = unname(oecd_scale_main["GVA"] / oecd_scale_main["HRS"])
+)
+
+source_overlap_main <-
+  compare_sources(dat_eurostat_main, dat_oecd_main_nac,
+                  by = c("geo", "activity", "measure", "unit_measure", "price_base"))
+
+scale_summary_main <-
+  source_overlap_main |>
+  summarise(ratio = stats::median(ratio_median, na.rm = TRUE),
+            growth_cor_min = min(growth_cor, na.rm = TRUE),
+            n_series = n(),
+            .by = measure)
+
+print(scale_summary_main)
+
+off_scale_main <- filter(scale_summary_main,
+                         abs(log10(ratio / oecd_scale_main[as.character(measure)])) > 0.05)
+if (nrow(off_scale_main)) {
+  stop("Eurostat and OECD levels differ for ",
+       paste0(off_scale_main$measure, " (x", signif(off_scale_main$ratio, 4), ")",
+              collapse = ", "),
+       ". Set `oecd_scale_main` in data-raw/data_main.R accordingly.")
+}
+
+dat_gdp_main_nac <-
+  combine_geo_sources(
+    eurostat = dat_eurostat_main,
+    oecd     = mutate(dat_oecd_main_nac,
+                      values = values * unname(oecd_scale_main[measure])),
+    geos     = list(eurostat = geos_eurostat)
+  )
+
+# PPP conversion. Eurostat has no PPP series in USD, so OECD's own conversion
+# factors are used: national currency per PPP dollar, read off the two versions
+# of the same OECD series. For the fixed price series the factor is the base
+# year PPP and does not vary over time; for current prices it does, and the last
+# available factor is carried forward to the years Eurostat already has but OECD
+# does not. For the US the factor is 1 by construction.
+key_unit_ppp <- c("XDC" = "USD_PPP", "XDC_PS" = "USD_PPP_PS", "XDC_H" = "USD_PPP_H")
+
+ppp_factor <-
+  dat_oecd_pdb_main |>
+  filter(conversion_type %in% c("_Z", "PPP")) |>
+  mutate(unit_measure = sub("^USD_PPP", "XDC", as.character(unit_measure)),
+         across(c(geo, measure, activity, price_base, conversion_type), as.character)) |>
+  filter(unit_measure %in% names(key_unit_ppp)) |>
+  select(time, geo, measure, activity, unit_measure, price_base, conversion_type, values) |>
+  pivot_wider(names_from = conversion_type, values_from = values) |>
+  mutate(ppp = if_else(geo == "US", 1, `_Z` / PPP)) |>
+  select(-`_Z`, -PPP) |>
+  arrange(time) |>
+  group_by(geo, measure, activity, unit_measure, price_base) |>
+  tidyr::fill(ppp, .direction = "downup") |>
+  ungroup()
+
+dat_gdp_main <-
+  dat_gdp_main_nac |>
+  mutate(conversion_type = "_Z") |>
+  bind_rows(
+    dat_gdp_main_nac |>
+      inner_join(ppp_factor,
+                 by = c("time", "geo", "measure", "activity", "unit_measure",
+                        "price_base")) |>
+      transmute(time, geo, measure, activity,
+                unit_measure = unname(key_unit_ppp[unit_measure]),
+                price_base, values = values / ppp, source,
+                conversion_type = "PPP")
+  ) |>
+  mutate(across(c(geo, measure, activity, unit_measure, price_base,
+                  conversion_type, source), as_factor)) |>
+  unite("var_id", measure, unit_measure, price_base, conversion_type,
+        sep = "-", remove = FALSE) |>
+  mutate(var_id = as_factor(var_id)) |>
+  select(time, geo, measure, activity, unit_measure, price_base, conversion_type,
+         var_id, source, values) |>
+  arrange(geo, measure, activity, price_base, conversion_type, time)
+
+# A country outside the OECD main table has no PPP factor to borrow, so it gets
+# national currency series only. That is every Eurostat country not in
+# `geos_oecd`, and it is worth knowing before drawing a level comparison.
+no_ppp <-
+  dat_gdp_main |>
+  summarise(has_ppp = any(conversion_type == "PPP"), .by = geo) |>
+  filter(!has_ppp)
+
+if (nrow(no_ppp)) {
+  message("National currency only, no OECD PPP factor: ",
+          paste(no_ppp$geo, collapse = ", "), ".")
+}
+
+save_dat(dat_gdp_main, overwrite = TRUE)
