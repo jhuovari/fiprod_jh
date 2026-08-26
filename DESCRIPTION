@@ -28,6 +28,10 @@ Imports:
     pkgdown,
     plotly,
     pxwebtools (>= 0.1.5),
+    rlang,
+    stats,
+    tibble,
+    tidyr,
     tidyselect,
     pttdatahaku
 Remotes: 
