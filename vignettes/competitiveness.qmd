@@ -229,25 +229,25 @@ bind_rows(
 ```{r}
 #| label: fig-balance
 
-dat_statfin_vtp <- pxwebtools::pxw_get_data(
-  url = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vtp/statfin_vtp_pxt_11yx.px",
-  query = list("Sektori" = c("S2"),
-               "Taloustoimi" = c("B11", "B9"),
-               "Vuosi" = c("*"),
-               "Tiedot" = c("bkt_suhde")))
-
-dat_statfin_vtp |>
-  filter_recode(
-    taloustoimi = c("Tavaroiden ja palveluiden tase" = "B11",
-                    "Vaihtotase" = "B9")
-  ) |>
-  ggplot(aes(time, -values, colour = taloustoimi)) +
-  geom_hline(yintercept = 0, linewidth = 0.3) +
-  geom_line() +
-  scale_y_continuous(labels = scales::label_number(decimal.mark = ",")) +
-  the_title_blank("xl") +
-  the_legend_bot() +
-  labs(title = "Ulkoinen tasapaino",
-       subtitle = "Suhteessa BKT:seen, %", y = NULL,
-       caption = "Lähde: Tilastokeskus")
+# dat_statfin_vtp <- pxwebtools::pxw_get_data(
+#   url = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vtp/statfin_vtp_pxt_11yx.px",
+#   query = list("Sektori" = c("S2"),
+#                "Taloustoimi" = c("B11", "B9"),
+#                "Vuosi" = c("*"),
+#                "Tiedot" = c("bkt_suhde")))
+# 
+# dat_statfin_vtp |>
+#   filter_recode(
+#     taloustoimi = c("Tavaroiden ja palveluiden tase" = "B11",
+#                     "Vaihtotase" = "B9")
+#   ) |>
+#   ggplot(aes(time, -values, colour = taloustoimi)) +
+#   geom_hline(yintercept = 0, linewidth = 0.3) +
+#   geom_line() +
+#   scale_y_continuous(labels = scales::label_number(decimal.mark = ",")) +
+#   the_title_blank("xl") +
+#   the_legend_bot() +
+#   labs(title = "Ulkoinen tasapaino",
+#        subtitle = "Suhteessa BKT:seen, %", y = NULL,
+#        caption = "Lähde: Tilastokeskus")
 ```
