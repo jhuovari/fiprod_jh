@@ -159,3 +159,33 @@ maissa, jotka molemmat lähteet kattavat; skripti pysähtyy virheeseen, jos suhd
 poikkeaa `oecd_scale`-vakiosta, jolloin kerroin asetetaan käsin. Tuloksena
 syntyvät taulut `dat_na_ind_comb` (yhdistetty toimialataulu) ja
 `dat_gva_ind_comb`, joka on samassa muodossa kuin `dat_gva_ind`.
+
+### Koko talouden yhdistäminen (`data-raw/get_eurostat_gdp.R`)
+
+Sama yhdistäminen tehdään myös OECD:n päätaululle `dat_oecd_pdb_main`.
+`get_eurostat_gdp.R` hakee Eurostatin `nama_10_gdp`-taulusta bruttokansantuotteen
+(`B1GQ`) käyvin hinnoin, edellisen vuoden hinnoin ja kiinteähintaisena sekä
+väestön, joka johdetaan BKT:sta miljoonina euroina ja BKT:sta euroa per asukas
+(Eurostat pyöristää per capita -luvun, joten väestön tasoon jää noin 0,01 %:n
+pyöristysvirhe, joka kumoutuu indekseistä ja kasvuvauhdeista). Arvonlisäys,
+työlliset ja työtunnit koko taloudelle (`_T`) ja yrityssektorille (`BTNXL`)
+otetaan suoraan taulusta `dat_eurostat_na_ind`, joten niitä ei haeta uudestaan.
+Tulos on `dat_eurostat_na_gdp`.
+
+`data_main.R` laskee näistä OECD:n julkaisemat suhdeluvut (`GDPPOP`, `HRSPOP`,
+`GVAEMP`, `GVAHRS`), yhdistää lähteet kuten toimialadatassa ja tallentaa taulun
+`dat_gdp_main`. Se on samassa muodossa kuin `dat_oecd_pdb_main` (`measure`,
+`activity`, `unit_measure`, `price_base`, `conversion_type`, `var_id`) ja lisänä
+on `source`-sarake.
+
+Eurostat ei julkaise ostovoimakorjattuja sarjoja USD:ssa, joten
+`conversion_type = "PPP"` -sarjat muodostetaan OECD:n omilla muuntokertoimilla:
+kerroin luetaan saman OECD-sarjan kahdesta versiosta (`XDC` jaettuna
+`USD_PPP`:llä). Kiinteähintaisilla sarjoilla kerroin on perusvuoden PPP eikä se
+vaihtele ajassa; käyvin hinnoin se vaihtelee, ja viimeisin kerroin jatketaan
+niille vuosille, jotka Eurostatissa jo ovat mutta OECD:llä ei. Yhdysvalloille
+kerroin on määritelmällisesti 1, koska OECD:n PPP-sarjat ovat suhteessa
+Yhdysvaltoihin — samasta syystä OECD:n taulussa ei ole USA:lle lainkaan
+`_Z`-sarjoja, ja niiden tilalla käytetään PPP-sarjoja. Maa, joka ei ole OECD:n
+päätaulussa lainkaan, jää ilman PPP-sarjoja; skripti tulostaa niiden maiden
+listan.
