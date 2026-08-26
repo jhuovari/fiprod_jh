@@ -49,14 +49,16 @@ dat_gdp_0 <- get_eurostat(
   time_format = "date",
   cache = FALSE,
   filters = list(na_item = names(key_na_item),
-                 unit = c(names(key_price_base), key_pop_unit_gdp))
+                 unit = c(names(key_price_base), key_pop_unit_gdp),
+                 geo = geos_eurostat)
 )
 
 dat_pc_0 <- get_eurostat(
   "nama_10_pc",
   time_format = "date",
   cache = FALSE,
-  filters = list(na_item = "B1GQ", unit = key_pop_unit_pc)
+  filters = list(na_item = "B1GQ", unit = key_pop_unit_pc,
+                 geo = geos_eurostat)
 )
 
 

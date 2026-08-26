@@ -246,7 +246,7 @@ dat_oecd_main_nac <-
 # thousand. Population is assumed to follow employment and hours; if it does not,
 # the check below says so. The ratio measures are already built in OECD's own
 # units above, so the OECD side of them needs no conversion.
-oecd_scale_main <- c(GDP = 1, GVA = 1, EMP = 1000, HRS = 1000, POP = 1000)
+oecd_scale_main <- c(GDP = 1, GVA = 1, EMP = 1000, HRS = 1000, POP = 1)
 oecd_scale_main <- c(
   oecd_scale_main,
   GDPPOP = 1, HRSPOP = 1, GVAEMP = 1, GVAHRS = 1
