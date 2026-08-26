@@ -199,3 +199,52 @@ Yhdysvaltoihin — samasta syystä OECD:n taulussa ei ole USA:lle lainkaan
 `_Z`-sarjoja, ja niiden tilalla käytetään PPP-sarjoja. Maa, joka ei ole OECD:n
 päätaulussa lainkaan, jää ilman PPP-sarjoja; skripti tulostaa niiden maiden
 listan.
+
+### Hintakilpailukyky (`data-raw/get_eurostat_ulc.R`)
+
+Hintakilpailukyvyn mittarit ovat vanhasta
+[ficomp](https://github.com/pttry/ficomp)-paketista, jolla tuottavuuslautakunnan
+raportin kilpailukykyluku on aiemmin tehty. Mukaan on otettu ydin eli
+yksikkötyökustannuslaskenta; ficompin muut aineistot (AMECO, BIS:n ja IMF:n
+painot, ECB, OECD Economic Outlook, STAN, ulkomaankauppa) on jätetty pois.
+
+`get_eurostat_ulc.R` hakee `nama_10_gdp`-taulusta bruttokansantuotteen,
+arvonlisäyksen, palkansaajakorvaukset (`D1`) sekä viennin ja tuonnin, ja
+`nama_10_a10_e`-taulusta työlliset ja palkansaajat koko taloudelle. Tulos
+`dat_eurostat_ulc` on leveässä muodossa, jossa jokainen sarake on
+taloustoimi ja yksikkö (esim. `B1GQ__CLV20_MNAC`), koska jokainen mittari
+yhdistää useita taloustoimia.
+
+`data_main.R` laskee näistä taulun `dat_ulc_comp`, jossa on sarakkeet `time`,
+`geo`, `vars`, `values` (indeksi, perusvuosi `comp_base_year`) ja `rel`
+(suhteessa verrokkimaihin). Mittarit ovat:
+
+- `nulc`, `nulc_eur`, `nulc_va` — nimellinen yksikkötyökustannus koko taloudelle
+  omassa valuutassa, yhteisessä valuutassa ja arvonlisäyksestä laskettuna
+- `nulc_aper`, `nulc_aper_eur` — yrittäjäkorjattu eli palkansaajakorvaukset
+  palkansaajaa kohden suhteessa tuotantoon työllistä kohden
+- `nulc_aper_atot`, `nulc_aper_eur_atot` — vaihtosuhdekorjattu, jossa vienti
+  arvotetaan tuontihinnoin (`gdp_trading_gain()`)
+- `rulc_aper` — reaalinen eli BKT:n hintaindeksillä deflatoitu
+- `lp_ind`, `d1_per_ind`, `exch_eur_ind` — hajotelman osatekijät: työn
+  tuottavuus, palkansaajakorvaukset työntekijää kohden ja valuuttakurssi
+
+Kaksi funktiota on paketissa: `ind_ulc()` laskee yksikkötyökustannusindeksin ja
+`gdp_trading_gain()` vaihtosuhdekorjatun tuotannon volyymin. Suhteelliset luvut
+lasketaan `weight_index2()`-funktiolla ECFIN:n kauppapainoilla
+(`weights_ecfin37`).
+
+Verrokkijoukko `geos_comp` on ficompin 17 maata. Niistä 15 (`geos_comp_es`)
+tulee Eurostatista, Sveitsi mukaan lukien (EFTA). Yhdysvallat ja Japani
+(`geos_comp_oecd`) eivät ole Eurostatin kansantalouden tilinpidossa, joten ne
+otetaan OECD:n tuottavuustietokannasta: `nulc_aper` lasketaan sarjoista `LCEMP`
+ja `GDPEMP`, reaalinen `rulc_aper` niiden käypä- ja kiinteähintaisista
+versioista, ja valuuttakurssi taulusta `exh_eur_a`. Yksikkötyökustannus
+rakennetaan osatekijöistä eikä oteta OECD:n julkaisemaa `ULCE`-sarjaa, jotta
+hajotelman identiteetti `nulc_aper = 100 × d1_per_ind / lp_ind` pitää tarkasti
+kaikilla mailla; `data_main.R` vertaa tulosta `ULCE`:en ajon yhteydessä.
+
+OECD:n taulussa ei ole vientiä eikä tuontia, joten vaihtosuhdekorjatut ja
+yrittäjäkorjaamattomat mittarit ovat vain Eurostat-mailla ja ne painotetaan
+15 maan kesken. Taulun `peers`-sarake kertoo kumpaa joukkoa vasten kukin
+suhdeluku on laskettu. Kuviot ovat vinjetissä `competitiveness.qmd`.

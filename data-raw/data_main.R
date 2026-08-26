@@ -21,7 +21,23 @@ geos_oecd <- c("EA20",
 geos_eurostat <- c("EA20", geo_ea, "SE", "DK", "NO")
 
 
-usethis::use_data(geo_ea, geos_oecd, geos_eurostat, overwrite = TRUE)
+# Peer group of the price competitiveness indicators, the 17 countries ficomp
+# weighted against. Eurostat's national accounts cover 15 of them, including
+# Switzerland through EFTA. The US and Japan are not there and come from the
+# OECD productivity database instead, which carries the unit labour cost and its
+# parts but no exports or imports - so they have no terms of trade adjustment.
+geos_comp_es   <- c("BE", "DK", "DE", "IE", "ES", "FR", "IT", "NL",
+                    "AT", "FI", "SE", "NO", "PT", "EL", "CH")
+geos_comp_oecd <- c("US", "JP")
+geos_comp      <- c(geos_comp_es, geos_comp_oecd)
+
+# Index base year of the competitiveness indicators, as in ficomp.
+comp_base_year <- 2010
+
+
+usethis::use_data(geo_ea, geos_oecd, geos_eurostat,
+                  geos_comp, geos_comp_es, geos_comp_oecd, comp_base_year,
+                  overwrite = TRUE)
 
 ## update
 
@@ -32,6 +48,7 @@ if (update){
   source("data-raw/get_oecd_pdb.R")
   source("data-raw/get_eurostat_na.R")
   source("data-raw/get_eurostat_gdp.R")
+  source("data-raw/get_eurostat_ulc.R")
   source("data-raw/get_exch.R")
 }
 
@@ -374,3 +391,192 @@ if (nrow(ratio_check) && abs(log10(ratio_median)) > 0.01) {
           ". Check `eurostat_mult` against the units of the source tables.",
           call. = FALSE)
 }
+
+
+## Price competitiveness ------------------------------------------------------
+#
+# The core of the old ficomp package (https://github.com/pttry/ficomp), which
+# the productivity board's competitiveness chapter was built on. Nominal and
+# real unit labour costs, their decomposition into productivity, compensation
+# and the exchange rate, and each of them relative to the peer group with the
+# ECFIN trade weights.
+#
+# The peer group is ficomp's 17 countries. 15 of them come from Eurostat
+# (`geos_comp_es`); the US and Japan come from the OECD productivity database
+# (`geos_comp_oecd`), which publishes the unit labour cost and its parts but no
+# exports or imports. They therefore have no terms of trade adjustment and no
+# unadjusted measure, and those indicators are weighted over the 15 Eurostat
+# countries only. The `peers` column of the result says which set was used.
+
+dat_eurostat_ulc <- load_dat("dat_eurostat_ulc")
+
+# Every peer has to have the base year, or the index is undefined for it and the
+# weighted relatives of all the others turn into NA.
+ulc_base_missing <-
+  dat_eurostat_ulc |>
+  filter(geo %in% geos_comp_es, lubridate::year(time) == comp_base_year) |>
+  summarise(across(c(B1GQ__CLV20_MNAC, D1__CP_MNAC, D1__CP_MEUR,
+                     EMP_DC__THS_PER, SAL_DC__THS_PER),
+                   ~ sum(!is.finite(.x))),
+            .by = geo) |>
+  filter(if_any(where(is.numeric), ~ .x > 0))
+
+if (nrow(ulc_base_missing)) {
+  stop("No ", comp_base_year, " observation for: ",
+       paste(ulc_base_missing$geo, collapse = ", "),
+       ". Pick another `comp_base_year` or drop the country from `geos_comp`.")
+}
+
+# The indicators. `nulc_aper` is the entrepreneur adjusted measure the board
+# reports: compensation per employee against output per employed person.
+dat_ulc_lvl <-
+  dat_eurostat_ulc |>
+  filter(geo %in% geos_comp_es) |>
+  mutate(geo = as.character(geo)) |>
+  arrange(time) |>
+  mutate(
+    # Terms of trade adjusted GDP volume: exports revalued at import prices.
+    B1GQA__CLV20_MNAC = gdp_trading_gain(
+      gdp = B1GQ__CLV20_MNAC,
+      exports = P6__CLV20_MNAC, exports_cp = P6__CP_MNAC,
+      imports = P7__CLV20_MNAC, imports_cp = P7__CP_MNAC),
+
+    # Nominal unit labour costs, whole economy
+    nulc     = ind_ulc(D1__CP_MNAC, B1GQ__CLV20_MNAC, time = time, baseyear = comp_base_year),
+    nulc_eur = ind_ulc(D1__CP_MEUR, B1GQ__CLV20_MNAC, time = time, baseyear = comp_base_year),
+    nulc_va  = ind_ulc(D1__CP_MNAC, B1G__CLV20_MNAC,  time = time, baseyear = comp_base_year),
+
+    # Entrepreneur adjusted, in own and in common currency
+    nulc_aper = ind_ulc(D1__CP_MNAC, B1GQ__CLV20_MNAC,
+                        SAL_DC__THS_PER, EMP_DC__THS_PER, time, comp_base_year),
+    nulc_aper_eur = ind_ulc(D1__CP_MEUR, B1GQ__CLV20_MNAC,
+                            SAL_DC__THS_PER, EMP_DC__THS_PER, time, comp_base_year),
+
+    # ... and against the terms of trade adjusted output
+    nulc_aper_atot = ind_ulc(D1__CP_MNAC, B1GQA__CLV20_MNAC,
+                             SAL_DC__THS_PER, EMP_DC__THS_PER, time, comp_base_year),
+    nulc_aper_eur_atot = ind_ulc(D1__CP_MEUR, B1GQA__CLV20_MNAC,
+                                 SAL_DC__THS_PER, EMP_DC__THS_PER, time, comp_base_year),
+
+    # Real unit labour cost: the nominal one deflated by the GDP deflator, i.e.
+    # the labour share of output
+    rulc_aper = rebase_index(
+      nulc_aper / (B1GQ__CP_MNAC / B1GQ__CLV20_MNAC), time, comp_base_year),
+
+    # The three parts the nominal common currency measure decomposes into
+    lp_ind       = rebase_index(B1GQ__CLV20_MNAC / EMP_DC__THS_PER, time, comp_base_year),
+    d1_per_ind   = rebase_index(D1__CP_MNAC / SAL_DC__THS_PER, time, comp_base_year),
+    exch_eur_ind = rebase_index(D1__CP_MNAC / D1__CP_MEUR, time, comp_base_year),
+
+    .by = geo
+  )
+
+## The US and Japan from the OECD productivity database ----------------------
+#
+# OECD publishes GDP per employed person and labour cost per employee, which is
+# the same construction as the Eurostat side: cost per employee against output
+# per employed person. Building the unit labour cost from those two rather than
+# taking OECD's published ULCE keeps the decomposition identity
+# `nulc_aper = 100 * d1_per_ind / lp_ind` exact for every country; the check
+# below compares the result with ULCE anyway.
+
+dat_oecd_pdb_ulc <- load_dat("dat_oecd_pdb_ulc")
+
+dat_ulc_oecd <-
+  dat_oecd_pdb_ulc |>
+  filter(geo %in% geos_comp_oecd, measure %in% c("GDPEMP", "LCEMP"),
+         price_base %in% c("V", "LR")) |>
+  mutate(time = as.Date(paste0(time, "-01-01")),
+         geo = as.character(geo)) |>
+  select(time, geo, measure, price_base, values) |>
+  unite("v", measure, price_base) |>
+  pivot_wider(names_from = v, values_from = values) |>
+  # National currency per euro, the same definition as D1__CP_MNAC / D1__CP_MEUR
+  left_join(transmute(exh_eur_a, time, geo = as.character(geo), xr = values),
+            by = c("time", "geo")) |>
+  arrange(time) |>
+  mutate(
+    lp_ind        = rebase_index(GDPEMP_LR, time, comp_base_year),
+    d1_per_ind    = rebase_index(LCEMP_V, time, comp_base_year),
+    nulc_aper     = rebase_index(LCEMP_V / GDPEMP_LR, time, comp_base_year),
+    # Real unit labour cost is the nominal one deflated by the GDP deflator,
+    # GDPEMP_V / GDPEMP_LR, which leaves the labour share LCEMP_V / GDPEMP_V
+    rulc_aper     = rebase_index(LCEMP_V / GDPEMP_V, time, comp_base_year),
+    exch_eur_ind  = rebase_index(xr, time, comp_base_year),
+    nulc_aper_eur = 100 * nulc_aper / exch_eur_ind,
+    .by = geo
+  )
+
+
+## The two sides together ----------------------------------------------------
+
+# Available for every peer, weighted over all 17
+comp_vars_all <- c("nulc_aper", "nulc_aper_eur", "rulc_aper",
+                   "lp_ind", "d1_per_ind", "exch_eur_ind")
+
+# Need exports, imports or the unadjusted cost, so Eurostat only, weighted
+# over the 15
+comp_vars_es <- c("nulc", "nulc_eur", "nulc_va",
+                  "nulc_aper_atot", "nulc_aper_eur_atot")
+
+dat_ulc_all <-
+  bind_rows(
+    select(dat_ulc_lvl, time, geo, all_of(c(comp_vars_all, comp_vars_es))),
+    select(dat_ulc_oecd, time, geo, all_of(comp_vars_all))
+  ) |>
+  mutate(geo = factor(geo, levels = geos_comp))
+
+# Relative to the peers: each country's index divided by the trade weighted
+# geometric mean of the others, times 100. Above 100 means costs have risen more
+# than in the peer countries since the base year.
+ulc_rel <- function(d, vars, geos) {
+  d |>
+    filter(geo %in% geos) |>
+    select(time, geo, all_of(vars)) |>
+    group_by(time) |>
+    mutate(across(all_of(vars),
+                  ~ weight_index2(.x, geo, time, geos = geos,
+                                  weight_df = weights_ecfin37))) |>
+    ungroup() |>
+    pivot_longer(-c(time, geo), names_to = "vars", values_to = "rel") |>
+    mutate(peers = length(geos))
+}
+
+dat_ulc_comp <-
+  dat_ulc_all |>
+  pivot_longer(-c(time, geo), names_to = "vars", values_to = "values") |>
+  # the OECD countries simply do not have the Eurostat only indicators
+  filter(!(geo %in% geos_comp_oecd & vars %in% comp_vars_es)) |>
+  left_join(
+    bind_rows(ulc_rel(dat_ulc_all, comp_vars_all, geos_comp),
+              ulc_rel(dat_ulc_all, comp_vars_es, geos_comp_es)),
+    by = c("time", "geo", "vars")
+  ) |>
+  mutate(vars = factor(vars, levels = c(comp_vars_all, comp_vars_es))) |>
+  select(time, geo, vars, values, rel, peers) |>
+  arrange(geo, vars, time)
+
+save_dat(dat_ulc_comp, overwrite = TRUE)
+
+
+# OECD also publishes the unit labour cost ready made (ULCE). Ours is built from
+# the two parts, so the two should agree; a gap means the definitions differ.
+ulce_check <-
+  dat_oecd_pdb_ulc |>
+  filter(geo %in% geos_comp_oecd, measure == "ULCE", unit_measure == "IX") |>
+  transmute(time = as.Date(paste0(time, "-01-01")),
+            geo = as.character(geo), ulce = values) |>
+  inner_join(
+    dat_ulc_comp |>
+      filter(vars == "nulc_aper", geo %in% geos_comp_oecd) |>
+      transmute(time, geo = as.character(geo), nulc = values),
+    by = c("time", "geo")
+  ) |>
+  filter(is.finite(ulce), is.finite(nulc), ulce != 0) |>
+  mutate(ulce = rebase_index(ulce, time, comp_base_year), .by = geo) |>
+  summarise(ero_pros = 100 * (stats::median(nulc / ulce) - 1),
+            suurin_pros = 100 * max(abs(nulc / ulce - 1)),
+            .by = geo)
+
+message("nulc_aper vs OECD ULCE:")
+print(ulce_check)
