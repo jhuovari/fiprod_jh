@@ -69,6 +69,9 @@ kiinteähintaisia sarjoja ei voi laskea yhteen. Ostovoimapariteetit ovat OECD:n
 omia. `source`-sarake kertoo, kummasta lähteestä kunkin maan tiedot ovat.
 Pelkkään OECD:n aineistoon perustuva versio on `main_oecd.qmd`.
 
+Työtuntien osalta lähteet poikkeavat toisistaan kymmenellä maalla, mikä siirtää
+työn tuottavuuden **tasoa** mutta ei juuri kasvuvauhtia. Ks. `tyotunnit.qmd`.
+
 Taulut ovat `dat_gdp_main` (koko talous) ja `dat_gva_ind_comb` (toimialat).
 
 ## BKT:n kasvu
