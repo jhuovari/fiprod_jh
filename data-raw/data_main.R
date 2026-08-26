@@ -190,10 +190,12 @@ dat_eurostat_main_lvl <-
   mutate(across(c(measure, activity, unit_measure, price_base), as.character))
 
 # The ratio measures OECD publishes. Population only exists for `_T`, so the
-# inner join drops GDPPOP and HRSPOP for BTNXL by itself.
+# inner join drops GDPPOP and HRSPOP for BTNXL by itself. The units are the ones
+# OECD uses: a per person series is `_PS` and a per hour series `_H`, so GDP per
+# capita is XDC_PS (and USD_PPP_PS once converted), not XDC.
 ratio_spec <- tibble::tribble(
   ~out_measure, ~num_measure, ~den_measure, ~out_unit, ~price_bases,
-  "GDPPOP",     "GDP",        "POP",        "XDC",     c("V", "LR"),
+  "GDPPOP",     "GDP",        "POP",        "XDC_PS",  c("V", "LR"),
   "GVAEMP",     "GVA",        "EMP",        "XDC_PS",  c("V", "LR"),
   "GVAHRS",     "GVA",        "HRS",        "XDC_H",   c("V", "LR"),
   "HRSPOP",     "HRS",        "POP",        "H_PS",    "_Z"
