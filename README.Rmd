@@ -122,3 +122,40 @@ muutetaan pitkäksi muodoksi (`vars`, `values`) ja tallennetaan `save_dat()`-
 funktiolla Parquet-muotoon, jolloin taulu on saatavilla kutsulla
 `load_dat("dat_gva_ind")`.
 
+
+### Eurostatin ja OECD:n yhdistäminen (`data-raw/get_eurostat_na.R`)
+
+OECD:n tuottavuustietokanta päivittyy selvästi Eurostatia hitaammin, joten
+samat sarjat voidaan hakea EU/ETA-maille Eurostatista ja loput (US, JP, UK)
+OECD:ltä. `get_eurostat_na.R` hakee Eurostatin taulut `nama_10_a10` (arvonlisäys
+`B1G` käyvin hinnoin `CP_MNAC`, edellisen vuoden hinnoin `PYP_MNAC` ja
+kiinteähintaisena `CLV20_MNAC`) sekä `nama_10_a10_e` (työlliset `EMP_DC`
+tuhansina henkilöinä `THS_PER` ja tuhansina tunteina `THS_HW`) ja muuntaa ne
+OECD:n tuottavuustietokannan muotoon: sarakkeet `time`, `geo`, `measure`
+(`GVA`, `EMP`, `HRS`), `activity`, `unit_measure`, `price_base` (`V`, `LR`,
+`Y`, `_Z`) ja `values`.
+
+NACE Rev. 2:n A\*10-toimialat nimetään OECD:n koodeiksi (`TOTAL` → `_T`,
+`B-E` → `BTE`, `G-I` → `GTI`, `O-Q` → `OTQ`, `R-U` → `RTU` jne.). Eurostat ei
+julkaise OECD:n yrityssektoria `BTNXL` (toimialat B–N pl. L) eikä sen
+palveluosaa `GTNXL` (G–N pl. L), joten ne lasketaan
+`aggregate_activities()`-funktiolla. **Kiinteähintaisia sarjoja ei voi laskea
+yhteen**, koska jokaisella sarjalla on oma ketjutushistoriansa. Siksi ne
+muunnetaan ensin edellisen vuoden hintaisiksi (Eurostatin `PYP_MNAC` käytetään
+sellaisenaan silloin kun se on saatavilla, muuten se lasketaan
+`prev_year_prices()`-funktiolla), summataan ja ketjutetaan takaisin vuoden 2020
+hintoihin `fixed_prices()`-funktiolla. Aggregaatti on `NA` jokaisena vuonna,
+jolta joltakin osatoimialalta puuttuu havainto, jottei osasummaa erehdytä
+lukemaan kokonaisuutena. Tulos tallennetaan tauluun `dat_eurostat_na_ind`.
+
+`data_main.R` yhdistää lähteet `combine_geo_sources()`-funktiolla: `geos_eurostat`
+-listan maat tulevat Eurostatista ja loput OECD:ltä, ja `source`-sarake kertoo
+kummasta rivi on peräisin. OECD:n taulusta johdetaan ensin työtunnit ja
+työlliset (`GVA / GVAHRS` ja `GVA / GVAEMP`), jotta se on samassa muodossa kuin
+Eurostatin taulu. Koska Eurostat raportoi arvonlisäyksen miljoonina
+kansallisen valuutan yksikköinä ja työpanoksen tuhansina, lähteiden kertoimet
+voivat poiketa toisistaan. `compare_sources()` laskee sarjojen suhteen niissä
+maissa, jotka molemmat lähteet kattavat; skripti pysähtyy virheeseen, jos suhde
+poikkeaa `oecd_scale`-vakiosta, jolloin kerroin asetetaan käsin. Tuloksena
+syntyvät taulut `dat_na_ind_comb` (yhdistetty toimialataulu) ja
+`dat_gva_ind_comb`, joka on samassa muodossa kuin `dat_gva_ind`.
