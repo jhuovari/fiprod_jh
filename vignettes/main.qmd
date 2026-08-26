@@ -377,7 +377,8 @@ dat_oecd_pdb_main |>
   filter_recode(
     measure = c("GDPPOP"),
     activity = c("Koko talous" = "_T"),
-    price_base = c("LR"),        # 
+    price_base = c("LR"), 
+    unit_measure = c("XDC_PS", "USD_PPP_PS"),
     conversion_type = c(MP = "_Z","PPP")
   ) |> 
   select(-unit_measure,  -var_id) |> 
@@ -416,7 +417,8 @@ dat_oecd_pdb_main |>
   filter_recode(
      measure = c("GDPPOP"),
     activity = c("Koko talous" = "_T"),
-    price_base = c("V"),        # 
+    price_base = c("V"),   
+    unit_measure = c("XDC_PS", "USD_PPP_PS"), 
     conversion_type = c(MP = "_Z","PPP")
   ) |> 
   select(-unit_measure,  -var_id) |> 
