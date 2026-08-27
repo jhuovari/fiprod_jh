@@ -4,7 +4,7 @@
 \alias{load_dat}
 \title{Load a dataset from extdata (installed package) as Parquet}
 \usage{
-load_dat(filename, package = NULL, must_work = TRUE)
+load_dat(filename, package = NULL, must_work = TRUE, vintage = NULL)
 }
 \arguments{
 \item{filename}{File name to read (with or without \code{.parquet}).}
@@ -14,6 +14,12 @@ in which case the function tries to infer the package name; if that fails,
 it will still try the development path under \code{inst/extdata/}.}
 
 \item{must_work}{If \code{TRUE} (default), error if the file cannot be located.}
+
+\item{vintage}{If non \code{NULL}, read a frozen copy of the data instead of
+the live file. The copy is written the first time a vintage is asked for,
+as \code{v<vintage>_<filename>.parquet} next to the other data, and read
+back unchanged after that, so a report keeps the numbers it was written
+with even when the underlying data is updated.}
 }
 \value{
 A \code{data.frame} loaded from the Parquet file.
