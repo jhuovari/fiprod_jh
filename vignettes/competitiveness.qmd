@@ -48,8 +48,10 @@ set_gg(theme_fpb())
 dat_ulc_comp     <- load_dat("dat_ulc_comp")
 dat_oecd_pdb_ulc <- load_dat("dat_oecd_pdb_ulc")
 
+start_year <- 2000
+
 # Indeksin vertailujakso: keskiarvo 2000 - viimeisin = 100, kuten raportissa
-mean_range <- 2000:lubridate::year(max(dat_ulc_comp$time))
+mean_range <- start_year:lubridate::year(max(dat_ulc_comp$time))
 
 geos <- c("Suomi" = "FI", "Ruotsi" = "SE", "Saksa" = "DE", "Ranska" = "FR",
           "Itävalta" = "AT", "Espanja" = "ES")
@@ -57,9 +59,12 @@ geos <- c("Suomi" = "FI", "Ruotsi" = "SE", "Saksa" = "DE", "Ranska" = "FR",
 # Poimii yhden tai useamman indikaattorin leveään muotoon ja indeksoi uudelleen
 pick <- function(vars_keep, col = "rel", geo_keep = "FI") {
   dat_ulc_comp |>
-    filter(geo %in% geo_keep, vars %in% vars_keep) |>
-    select(time, geo, vars, extended, arvo = all_of(col)) |>
-    mutate(arvo = rebase_index(arvo, time, mean_range), .by = c(geo, vars)) |>
+    filter(
+      geo %in% geo_keep, 
+      vars %in% vars_keep,
+      lubridate::year(time) >= start_year) |>
+    select(time, geo, vars, extended, values = all_of(col)) |>
+    mutate(values = rebase_index(values, time, mean_range), .by = c(geo, vars)) |>
     mutate(vars = fct_recode(factor(vars, levels = vars_keep), !!!vars_keep))
 }
 
@@ -77,7 +82,7 @@ verrokkimaita nopeammin.
 
 pick(c("Omassa valuutassa" = "nulc_aper",
        "Samassa valuutassa" = "nulc_aper_eur")) |>
-  ggplot(aes(time, arvo, colour = vars)) +
+  ggplot(aes(time, values, colour = vars)) +
   geom_hline(yintercept = 100, linewidth = 0.3) +
   geom_line() +
   the_title_blank("xl") +
@@ -100,8 +105,8 @@ tarkoittaa kaikilla kolmella kustannuskilpailukyvyn heikkenemistä.
 pick(c("Tuottavuus" = "lp_ind",
        "Palkansaajakorvaukset" = "d1_per_ind",
        "Valuuttakurssi" = "exch_eur_ind")) |>
-  mutate(arvo = if_else(vars == "Valuuttakurssi", 100^2 / arvo, arvo)) |>
-  ggplot(aes(time, arvo, colour = vars)) +
+  mutate(values = if_else(vars == "Valuuttakurssi", 100^2 / values, values)) |>
+  ggplot(aes(time, values, colour = vars)) +
   geom_hline(yintercept = 100, linewidth = 0.3) +
   geom_line() +
   the_title_blank("xl") +
@@ -124,7 +129,7 @@ joita viennistä todella saadaan.
 
 pick(c("Vaihtosuhdekorjattu" = "nulc_aper_eur_atot",
        "Tavallinen" = "nulc_aper_eur")) |>
-  ggplot(aes(time, arvo, colour = vars)) +
+  ggplot(aes(time, values, colour = vars)) +
   geom_hline(yintercept = 100, linewidth = 0.3) +
   geom_line() +
   the_title_blank("xl") +
@@ -143,7 +148,7 @@ pick(c("Nimellinen, omassa valuutassa" = "nulc_aper",
        "Nimellinen, samassa valuutassa" = "nulc_aper_eur",
        "Nimellinen, vaihtosuhdekorjattu" = "nulc_aper_eur_atot",
        "Reaalinen" = "rulc_aper")) |>
-  ggplot(aes(time, arvo, colour = vars)) +
+  ggplot(aes(time, values, colour = vars)) +
   geom_hline(yintercept = 100, linewidth = 0.3) +
   geom_line() +
   the_title_blank("xl") +
@@ -168,7 +173,7 @@ jää kustannuksista pois mutta on tuotannossa mukana.
 pick(c("Yrittäjäkorjattu" = "nulc_aper",
        "Korjaamaton" = "nulc",
        "Arvonlisäyksestä" = "nulc_va")) |>
-  ggplot(aes(time, arvo, colour = vars)) +
+  ggplot(aes(time, values, colour = vars)) +
   geom_hline(yintercept = 100, linewidth = 0.3) +
   geom_line() +
   the_title_blank("xl") +
@@ -186,7 +191,7 @@ pick(c("Yrittäjäkorjattu" = "nulc_aper",
 pick(c("Samassa valuutassa" = "nulc_aper_eur"), geo_keep = geos) |>
   mutate(geo = fct_recode(factor(geo, levels = geos), !!!geos),
          korostus = geo == "Suomi") |>
-  ggplot(aes(time, arvo, colour = geo, linewidth = korostus)) +
+  ggplot(aes(time, values, colour = geo, linewidth = korostus)) +
   geom_hline(yintercept = 100, linewidth = 0.3) +
   geom_line() +
   scale_linewidth_manual(values = c(`FALSE` = 0.5, `TRUE` = 1.2), guide = "none") +
@@ -212,7 +217,7 @@ pick(c("Yksikkötyökustannus" = "nulc_aper",
        "Tuottavuus" = "lp_ind"),
      col = "values", geo_keep = c("US", "JP")) |>
   filter(lubridate::year(time) >= 2010) |>
-  ggplot(aes(time, arvo, colour = geo)) +
+  ggplot(aes(time, values, colour = geo)) +
   facet_wrap(~ vars) +
   geom_line() +
   geom_point(data = ~ filter(.x, extended), size = 1.8) +
