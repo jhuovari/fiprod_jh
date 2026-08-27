@@ -95,6 +95,8 @@ save_dat <- function(x, filename = deparse(substitute(x)),
 #'   in which case the function tries to infer the package name; if that fails,
 #'   it will still try the development path under \code{inst/extdata/}.
 #' @param must_work If \code{TRUE} (default), error if the file cannot be located.
+#' @param vintage If non \code{NULL} loads from vintage data. If data not
+#'   present saves new vintage.
 #'
 #' @return A \code{data.frame} loaded from the Parquet file.
 #' @examples
@@ -107,9 +109,14 @@ save_dat <- function(x, filename = deparse(substitute(x)),
 #' df <- load_dat("mtcars.parquet")
 #' }
 #' @export
-load_dat <- function(filename, package = NULL, must_work = TRUE) {
+load_dat <- function(filename, package = NULL, must_work = TRUE, vintage = NULL) {
   if (missing(filename) || !nzchar(filename)) {
     stop("'filename' must be provided (e.g., 'mydata.parquet').")
+  }
+
+  if (!is.null(vintage)){
+    filename_org <- filename
+    filename <- paste0("v", as.character(vintage), "_", filename_org)
   }
 
   # Ensure .parquet extension (users may omit it)
@@ -140,11 +147,18 @@ load_dat <- function(filename, package = NULL, must_work = TRUE) {
     }
   }
 
-  if (!nzchar(path) || !file.exists(path)) {
+  if (!nzchar(path) || !file.exists(path) || !is.null(vintage)) {
+    vdat <- load_dat(filename_org, package = package, must_work = TRUE)
+    path <- save_dat(vdat, filename)
+  } else if (!nzchar(path) || !file.exists(path)) {
     if (isTRUE(must_work)) {
-      stop("File not found: ", filename,
-           ". Tried system.file('extdata', ...) for package '", package,
-           "' and development path under inst/extdata.")
+      stop(
+        "File not found: ",
+        filename,
+        ". Tried system.file('extdata', ...) for package '",
+        package,
+        "' and development path under inst/extdata."
+      )
     } else {
       return(invisible(NULL))
     }
