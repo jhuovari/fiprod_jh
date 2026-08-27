@@ -481,16 +481,97 @@ dat_ulc_lvl <-
 # below compares the result with ULCE anyway.
 
 dat_oecd_pdb_ulc <- load_dat("dat_oecd_pdb_ulc")
+dat_oecd_ulcq    <- load_dat("dat_oecd_ulcq")
 
-dat_ulc_oecd <-
+# Annual OECD levels, one column per measure and price base
+oecd_lvl_long <-
   dat_oecd_pdb_ulc |>
   filter(geo %in% geos_comp_oecd, measure %in% c("GDPEMP", "LCEMP"),
          price_base %in% c("V", "LR")) |>
-  mutate(time = as.Date(paste0(time, "-01-01")),
-         geo = as.character(geo)) |>
-  select(time, geo, measure, price_base, values) |>
-  unite("v", measure, price_base) |>
-  pivot_wider(names_from = v, values_from = values) |>
+  transmute(time = as.Date(paste0(time, "-01-01")),
+            geo = as.character(geo),
+            series = paste(measure, price_base, sep = "_"),
+            values)
+
+# The annual table runs a year or two behind for the US and Japan, while the
+# quarterly one is current. Take the annual growth of the quarterly series and
+# carry the annual level forward with it. Quarterly volumes carry the price base
+# `Q` where the annual table has `LR`.
+key_q_price <- c("V" = "V", "LR" = "Q")
+
+# The growth is taken over the quarters the two years have in common, so a year
+# that is only half published is compared with the same half of the year before
+# rather than with a full year. For a complete year this is exactly the growth
+# of the annual average. The series are seasonally adjusted, so a part year
+# average is a fair reading of the level.
+ulc_min_quarters <- 2
+
+ulcq_q <-
+  dat_oecd_ulcq |>
+  filter(geo %in% geos_comp_oecd, measure %in% c("GDPEMP", "LCEMP"),
+         price_base %in% key_q_price) |>
+  transmute(geo = as.character(geo),
+            measure = as.character(measure),
+            price_base = as.character(price_base),
+            year = lubridate::year(time),
+            q = lubridate::quarter(time),
+            values)
+
+ulcq_change <-
+  inner_join(
+    ulcq_q,
+    mutate(ulcq_q, year = year + 1L) |> rename(values_prev = values),
+    by = c("geo", "measure", "price_base", "year", "q")
+  ) |>
+  summarise(n_q = n(),
+            change = mean(values) / mean(values_prev) - 1,
+            .by = c(geo, measure, price_base, year)) |>
+  filter(n_q >= ulc_min_quarters) |>
+  transmute(time = as.Date(paste0(year, "-01-01")), geo,
+            series = paste(measure,
+                           names(key_q_price)[match(price_base, key_q_price)],
+                           sep = "_"),
+            change, n_q)
+
+missing_q <- setdiff(unique(oecd_lvl_long$series), unique(ulcq_change$series))
+if (length(missing_q)) {
+  warning("No quarterly counterpart for ", paste(missing_q, collapse = ", "),
+          "; those series are not extended. Check `key_q_price` against the ",
+          "price bases in dat_oecd_ulcq.", call. = FALSE)
+}
+
+oecd_extended <-
+  oecd_lvl_long |>
+  full_join(ulcq_change, by = c("time", "geo", "series")) |>
+  arrange(time) |>
+  mutate(extended = is.na(values),
+         values = extend_with_change(values, change, time),
+         extended = extended & !is.na(values),
+         .by = c(geo, series)) |>
+  select(-change)
+
+# Which country years rest on the quarterly extension rather than on the annual
+# national accounts
+ulc_extended_years <-
+  oecd_extended |>
+  filter(extended) |>
+  summarise(vuodet = paste(sort(unique(lubridate::year(time))), collapse = ", "),
+            min_neljanneksia = min(n_q, na.rm = TRUE),
+            .by = geo)
+
+if (nrow(ulc_extended_years)) {
+  message("Extended with quarterly growth:")
+  print(ulc_extended_years)
+}
+
+dat_ulc_oecd <-
+  oecd_extended |>
+  select(-n_q) |>
+  pivot_wider(names_from = series, values_from = c(values, extended)) |>
+  # a country year rests on the extension if any of its inputs did
+  mutate(extended = if_any(starts_with("extended_"), ~ .x %in% TRUE)) |>
+  select(-starts_with("extended_")) |>
+  rename_with(~ sub("^values_", "", .x)) |>
   # National currency per euro, the same definition as D1__CP_MNAC / D1__CP_MEUR
   left_join(transmute(exh_eur_a, time, geo = as.character(geo), xr = values),
             by = c("time", "geo")) |>
@@ -521,8 +602,9 @@ comp_vars_es <- c("nulc", "nulc_eur", "nulc_va",
 
 dat_ulc_all <-
   bind_rows(
-    select(dat_ulc_lvl, time, geo, all_of(c(comp_vars_all, comp_vars_es))),
-    select(dat_ulc_oecd, time, geo, all_of(comp_vars_all))
+    select(dat_ulc_lvl, time, geo, all_of(c(comp_vars_all, comp_vars_es))) |>
+      mutate(extended = FALSE),
+    select(dat_ulc_oecd, time, geo, extended, all_of(comp_vars_all))
   ) |>
   mutate(geo = factor(geo, levels = geos_comp))
 
@@ -544,7 +626,7 @@ ulc_rel <- function(d, vars, geos) {
 
 dat_ulc_comp <-
   dat_ulc_all |>
-  pivot_longer(-c(time, geo), names_to = "vars", values_to = "values") |>
+  pivot_longer(-c(time, geo, extended), names_to = "vars", values_to = "values") |>
   # the OECD countries simply do not have the Eurostat only indicators
   filter(!(geo %in% geos_comp_oecd & vars %in% comp_vars_es)) |>
   left_join(
@@ -553,7 +635,7 @@ dat_ulc_comp <-
     by = c("time", "geo", "vars")
   ) |>
   mutate(vars = factor(vars, levels = c(comp_vars_all, comp_vars_es))) |>
-  select(time, geo, vars, values, rel, peers) |>
+  select(time, geo, vars, values, rel, peers, extended) |>
   arrange(geo, vars, time)
 
 save_dat(dat_ulc_comp, overwrite = TRUE)

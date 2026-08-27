@@ -247,4 +247,14 @@ kaikilla mailla; `data_main.R` vertaa tulosta `ULCE`:en ajon yhteydessä.
 OECD:n taulussa ei ole vientiä eikä tuontia, joten vaihtosuhdekorjatut ja
 yrittäjäkorjaamattomat mittarit ovat vain Eurostat-mailla ja ne painotetaan
 15 maan kesken. Taulun `peers`-sarake kertoo kumpaa joukkoa vasten kukin
-suhdeluku on laskettu. Kuviot ovat vinjetissä `competitiveness.qmd`.
+suhdeluku on laskettu.
+
+OECD:n vuositiedot päättyvät Yhdysvalloille ja Japanille vuoden tai kaksi muita
+aiemmin. Koska `weight_index2()` palauttaa NA:n jos yksikin verrokki puuttuu,
+viimeinen vuosi katoaisi muuten koko joukolta. Sarjat jatketaan siksi OECD:n
+neljännesvuositaulun (`dat_oecd_ulcq`) kasvuvauhdilla funktiolla
+`extend_with_change()`. Kasvu lasketaan niistä neljänneksistä, jotka kummaltakin
+vuodelta löytyvät, joten vajaa vuosi verrataan edellisen vuoden samaan jaksoon
+eikä koko vuoteen; täydellä vuodella tulos on täsmälleen vuosikeskiarvon kasvu.
+Vähimmäismäärä on `ulc_min_quarters` (oletus 2). Jatketut havainnot on merkitty
+tuloksen `extended`-sarakkeeseen. Kuviot ovat vinjetissä `competitiveness.qmd`.
