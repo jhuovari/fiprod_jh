@@ -54,8 +54,11 @@ erikseen mutta ei niiden suhdetta; OECD julkaisee suhteen mutta ei työtunteja.
 | | Eurostat-maat | OECD-maat |
 |---|---|---|
 | `GVA` | `nama_10_a10`, `B1G` | OECD, sellaisenaan |
-| `HRS` | `nama_10_a10_e`, `EMP_DC` / `THS_HW` | ei julkaista |
+| `HRS` | `nama_10_a10_e`, `EMP_DC` / `THS_HW` | ei julkaista, **laskettu**: `GVA / GVAHRS` |
 | `GVAHRS` | **laskettu**: `GVA / HRS` | **suoraan tietokannasta** |
+
+Suunta on siis päinvastainen: Eurostat-mailla tunnit ovat lähtötieto ja suhde
+lasketaan, OECD-mailla suhde on lähtötieto ja tunnit lasketaan takaisin.
 
 Sen että OECD:n päätaulussa ei ole työtunteja näkee suoraan aineistosta:
 
@@ -71,6 +74,10 @@ bind_rows(
   arrange(measure) |>
   knitr::kable(caption = "Havaintojen määrä mittareittain")
 ```
+
+Yhdistetyssä `dat_gdp_main`-taulussa `HRS` on kaikilla mailla, mutta se on eri
+tavalla tehty tieto: Eurostat-mailla tilinpidon tuntisarja, OECD-mailla
+takaisinlaskettu `GVA / GVAHRS`.
 
 Näin ollen `GVAHRS` on kahdessa aineistossa sama nimi kahdelle eri asialle. Ne
 ovat yhtä suuret vain, jos OECD:n `GVAHRS` on itsekin arvonlisäys jaettuna

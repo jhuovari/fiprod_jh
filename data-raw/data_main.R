@@ -260,6 +260,62 @@ dat_oecd_main_nac <-
   distinct(time, geo, measure, activity, unit_measure, price_base, .keep_all = TRUE) |>
   select(time, geo, measure, activity, unit_measure, price_base, values)
 
+# The main table, like the industry one, publishes labour input only as value
+# added per person (GVAEMP) and per hour (GVAHRS), so employment and hours are
+# backed out of the current price series in the same way. Without this the OECD
+# countries would have no EMP and no HRS in dat_gdp_main at all, while the
+# Eurostat ones do. The ratio does not depend on the currency, so the US series,
+# which are only published converted to PPP dollars, come out right as well.
+# The units follow from the division: OECD's value added is in millions, so
+# persons and hours are in millions too, and `oecd_scale_main` puts them on
+# Eurostat's thousands below.
+oecd_main_labour <-
+  dat_oecd_main_nac |>
+  filter(price_base == "V", measure %in% c("GVA", "GVAEMP", "GVAHRS")) |>
+  select(time, geo, activity, measure, values) |>
+  pivot_wider(names_from = measure, values_from = values) |>
+  transmute(time, geo, activity,
+            EMP = GVA / GVAEMP,
+            HRS = GVA / GVAHRS) |>
+  pivot_longer(c(EMP, HRS), names_to = "measure", values_to = "values") |>
+  filter(!is.na(values)) |>
+  mutate(unit_measure = if_else(measure == "EMP", "PS", "H"),
+         price_base = "_Z") |>
+  select(time, geo, measure, activity, unit_measure, price_base, values)
+
+# The hours OECD implies elsewhere: it publishes hours per head of population
+# (HRSPOP) and population itself, and the two multiplied together have to give
+# the same total hours as the division above. Hours are in millions and
+# population in thousands, hence the factor of a thousand. Only the whole
+# economy is covered, since HRSPOP has no business sector counterpart.
+hrs_check <-
+  inner_join(
+    filter(oecd_main_labour, measure == "HRS", activity == "_T") |>
+      select(time, geo, derived = values),
+    dat_oecd_main_nac |>
+      filter(measure %in% c("HRSPOP", "POP"), activity == "_T") |>
+      select(time, geo, measure, values) |>
+      pivot_wider(names_from = measure, values_from = values) |>
+      transmute(time, geo, published = HRSPOP * POP / 1000),
+    by = c("time", "geo")
+  ) |>
+  filter(is.finite(derived), is.finite(published), published != 0)
+
+if (nrow(hrs_check)) {
+  hrs_ratio <- stats::median(hrs_check$derived / hrs_check$published, na.rm = TRUE)
+  if (abs(log10(hrs_ratio)) > 0.005) {
+    warning("Hours derived as GVA / GVAHRS and hours as HRSPOP * POP differ ",
+            "by a factor of ", signif(hrs_ratio, 4),
+            " in the OECD main table.", call. = FALSE)
+  }
+}
+
+# Anything OECD does publish itself wins over the derived series.
+dat_oecd_main_nac <-
+  bind_rows(dat_oecd_main_nac, oecd_main_labour) |>
+  distinct(time, geo, measure, activity, unit_measure, price_base, .keep_all = TRUE) |>
+  arrange(geo, measure, activity, price_base, time)
+
 # Multipliers, as for the industry data: OECD counts persons and hours in
 # millions, Eurostat in thousands, so the OECD levels are multiplied by a
 # thousand. Population is assumed to follow employment and hours; if it does not,
