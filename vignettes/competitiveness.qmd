@@ -28,6 +28,12 @@ Niillä ei siksi ole vaihtosuhdekorjausta eikä yrittäjäkorjaamatonta mittaria
 ne mittarit painotetaan 15 Eurostat-maan kesken. Taulun `peers`-sarake kertoo,
 kumpaa joukkoa vasten kukin suhdeluku on laskettu.
 
+OECD:n vuositiedot Yhdysvalloille ja Japanille päättyvät vuoden tai kaksi muita
+aiemmin. Ne jatketaan OECD:n neljännesvuositietojen kasvuvauhdilla, jolloin
+suhdeluku ulottuu viimeiseen vuoteen kaikilla mailla — muuten viimeinen vuosi
+katoaisi koko verrokkijoukolta. Jatketut havainnot on merkitty `extended`-
+sarakkeeseen ja näkyvät alla pisteinä.
+
 ```{r}
 #| label: setup
 
@@ -52,7 +58,7 @@ geos <- c("Suomi" = "FI", "Ruotsi" = "SE", "Saksa" = "DE", "Ranska" = "FR",
 pick <- function(vars_keep, col = "rel", geo_keep = "FI") {
   dat_ulc_comp |>
     filter(geo %in% geo_keep, vars %in% vars_keep) |>
-    select(time, geo, vars, arvo = all_of(col)) |>
+    select(time, geo, vars, extended, arvo = all_of(col)) |>
     mutate(arvo = rebase_index(arvo, time, mean_range), .by = c(geo, vars)) |>
     mutate(vars = fct_recode(factor(vars, levels = vars_keep), !!!vars_keep))
 }
@@ -189,6 +195,32 @@ pick(c("Samassa valuutassa" = "nulc_aper_eur"), geo_keep = geos) |>
   labs(title = "Suhteellinen nimellinen yksikkötyökustannus",
        subtitle = sub_ind, y = NULL,
        caption = "Lähde: Eurostat, Tuottavuuslautakunta")
+```
+
+## Yhdysvallat ja Japani
+
+Vuositiedot päättyvät aiemmin kuin muilla, joten viimeiset havainnot on laskettu
+neljännesvuositietojen kasvusta. Kasvu otetaan niistä neljänneksistä, jotka
+molemmilta vuosilta löytyvät, joten vajaa vuosi verrataan edellisen vuoden
+samaan jaksoon eikä koko vuoteen. Pisteet ovat näin jatkettuja vuosia.
+
+```{r}
+#| label: fig-extended
+
+pick(c("Yksikkötyökustannus" = "nulc_aper",
+       "Palkansaajakorvaukset" = "d1_per_ind",
+       "Tuottavuus" = "lp_ind"),
+     col = "values", geo_keep = c("US", "JP")) |>
+  filter(lubridate::year(time) >= 2010) |>
+  ggplot(aes(time, arvo, colour = geo)) +
+  facet_wrap(~ vars) +
+  geom_line() +
+  geom_point(data = ~ filter(.x, extended), size = 1.8) +
+  the_title_blank("xl") +
+  the_legend_bot() +
+  labs(title = "Yhdysvaltojen ja Japanin sarjat, pisteet jatkettuja",
+       subtitle = paste0("Indeksi, ", min(mean_range), " = 100"), y = NULL,
+       caption = "Lähde: OECD, Tuottavuuslautakunta")
 ```
 
 ## Vertailu OECD:n julkaisemaan sarjaan
