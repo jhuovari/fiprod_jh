@@ -303,7 +303,7 @@ p <- dat_gva_ind_comb|>
     geo = geos
   ) |> 
   ggplot(aes(time, values, colour = geo, linewidth = geo)) +
-  # scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
+  scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
