@@ -8,7 +8,10 @@
 #' @param filename File name to write. Defaults to the name of \code{x} with a
 #'   \code{.parquet} extension.
 #' @param dir Directory where to write during development. Defaults to
-#'   \code{"inst/extdata"}. The directory is created if it does not exist.
+#'   \code{inst/extdata} under the package root, found by walking up from the
+#'   working directory to \code{DESCRIPTION}, so that writing from a
+#'   subdirectory such as \code{vignettes/} still lands in the right place. The
+#'   directory is created if it does not exist.
 #' @param overwrite Logical, overwrite an existing file (default \code{FALSE}).
 #'
 #' @return (Invisibly) the path to the written file.
@@ -19,7 +22,7 @@
 #' }
 #' @export
 save_dat <- function(x, filename = deparse(substitute(x)),
-                     dir = "inst/extdata", overwrite = FALSE) {
+                     dir = .pkg_extdata_dir(), overwrite = FALSE) {
   # Validate inputs
   if (!is.data.frame(x)) {
     stop("'x' must be a data.frame (or tibble).")
@@ -70,6 +73,56 @@ save_dat <- function(x, filename = deparse(substitute(x)),
   ""
 }
 
+#' Package root, found by walking up to DESCRIPTION
+#'
+#' @param start Directory to start from.
+#' @return The package root, or `NA_character_` if no DESCRIPTION is found.
+#' @keywords internal
+.pkg_root <- function(start = getwd()) {
+  desc <- .find_description(start)
+  if (is.na(desc)) NA_character_ else dirname(desc)
+}
+
+#' Where package data is written during development
+#'
+#' Resolved from the package root rather than from the working directory, so
+#' that a call from `vignettes/` does not create `vignettes/inst/extdata`.
+#'
+#' @return A path to `inst/extdata`.
+#' @keywords internal
+.pkg_extdata_dir <- function() {
+  root <- .pkg_root()
+  if (is.na(root)) "inst/extdata" else file.path(root, "inst", "extdata")
+}
+
+#' File name of a vintage copy
+#'
+#' @param filename Base file name.
+#' @param vintage Vintage label, e.g. a year.
+#' @keywords internal
+.vintage_filename <- function(filename, vintage) {
+  paste0("v", as.character(vintage), "_", filename)
+}
+
+#' Locate a data file, installed or in the source tree
+#'
+#' @param filename File name with extension.
+#' @param package Package name, possibly `""`.
+#' @return The path, or `""` when the file is not there.
+#' @keywords internal
+.find_dat_path <- function(filename, package) {
+  if (nzchar(package)) {
+    path <- system.file("extdata", filename, package = package, mustWork = FALSE)
+    if (nzchar(path) && file.exists(path)) return(path)
+  }
+  root <- .pkg_root()
+  if (!is.na(root)) {
+    dev_path <- file.path(root, "inst", "extdata", filename)
+    if (file.exists(dev_path)) return(dev_path)
+  }
+  ""
+}
+
 #' @keywords internal
 .find_description <- function(start = getwd()) {
   cur  <- normalizePath(start, winslash = "/", mustWork = FALSE)
@@ -95,6 +148,11 @@ save_dat <- function(x, filename = deparse(substitute(x)),
 #'   in which case the function tries to infer the package name; if that fails,
 #'   it will still try the development path under \code{inst/extdata/}.
 #' @param must_work If \code{TRUE} (default), error if the file cannot be located.
+#' @param vintage If non \code{NULL}, read a frozen copy of the data instead of
+#'   the live file. The copy is written the first time a vintage is asked for,
+#'   as \code{v<vintage>_<filename>.parquet} next to the other data, and read
+#'   back unchanged after that, so a report keeps the numbers it was written
+#'   with even when the underlying data is updated.
 #'
 #' @return A \code{data.frame} loaded from the Parquet file.
 #' @examples
@@ -107,9 +165,14 @@ save_dat <- function(x, filename = deparse(substitute(x)),
 #' df <- load_dat("mtcars.parquet")
 #' }
 #' @export
-load_dat <- function(filename, package = NULL, must_work = TRUE) {
+load_dat <- function(filename, package = NULL, must_work = TRUE, vintage = NULL) {
   if (missing(filename) || !nzchar(filename)) {
     stop("'filename' must be provided (e.g., 'mydata.parquet').")
+  }
+
+  filename_org <- filename
+  if (!is.null(vintage)) {
+    filename <- .vintage_filename(filename_org, vintage)
   }
 
   # Ensure .parquet extension (users may omit it)
@@ -122,32 +185,23 @@ load_dat <- function(filename, package = NULL, must_work = TRUE) {
     package <- .infer_pkg_name()
   }
 
-  # 1) Look in installed/loaded package via system.file
-  path <- ""
-  if (nzchar(package)) {
-    path <- system.file("extdata", filename, package = package, mustWork = FALSE)
+  path <- .find_dat_path(filename, package)
+
+  # A vintage is written once and then read back on every later call, which is
+  # the point: it is a copy that does not follow the live data.
+  if (!nzchar(path) && !is.null(vintage)) {
+    message("Writing vintage ", vintage, " of ", filename_org, ".")
+    vdat <- load_dat(filename_org, package = package, must_work = TRUE)
+    path <- save_dat(vdat, filename)
   }
 
-  # 2) Fallback: look in development path under inst/extdata
-  if (!nzchar(path) || !file.exists(path)) {
-    desc_path <- .find_description()
-    if (!is.na(desc_path)) {
-      pkg_root <- dirname(desc_path)
-      dev_path <- file.path(pkg_root, "inst", "extdata", filename)
-      if (file.exists(dev_path)) {
-        path <- dev_path
-      }
-    }
-  }
-
-  if (!nzchar(path) || !file.exists(path)) {
+  if (!nzchar(path)) {
     if (isTRUE(must_work)) {
       stop("File not found: ", filename,
            ". Tried system.file('extdata', ...) for package '", package,
            "' and development path under inst/extdata.")
-    } else {
-      return(invisible(NULL))
     }
+    return(invisible(NULL))
   }
 
   nanoparquet::read_parquet(path)

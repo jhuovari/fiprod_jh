@@ -7,7 +7,7 @@
 save_dat(
   x,
   filename = deparse(substitute(x)),
-  dir = "inst/extdata",
+  dir = .pkg_extdata_dir(),
   overwrite = FALSE
 )
 }
@@ -18,7 +18,10 @@ save_dat(
 \code{.parquet} extension.}
 
 \item{dir}{Directory where to write during development. Defaults to
-\code{"inst/extdata"}. The directory is created if it does not exist.}
+\code{inst/extdata} under the package root, found by walking up from the
+working directory to \code{DESCRIPTION}, so that writing from a
+subdirectory such as \code{vignettes/} still lands in the right place. The
+directory is created if it does not exist.}
 
 \item{overwrite}{Logical, overwrite an existing file (default \code{FALSE}).}
 }

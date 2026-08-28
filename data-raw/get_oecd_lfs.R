@@ -14,8 +14,8 @@ wap_key <- oecd_make_filter(
     "WAP",      # MEASURE
     NULL,       # ADJUSTMENT
     NULL,       # TRANSFORMATION
-    "Y",        # SEX (Y = total)
-    "_T",       # ACTIVITY
+    "Y",        # Adjustment
+    "_T",       # SEX
     "Y15T64",   # AGE
     NULL,       # UNIT_MEASURE
     "A"         # FREQ
@@ -34,7 +34,7 @@ dat_oecd_wap <-
     vars = c(
       geo        = "REF_AREA",
       "measure"  = "MEASURE",
-      "activity" = "ACTIVITY",
+      "activity" = "ACTIVITY",  # "_Z"
       "age"      = "AGE"
     )
   ) |>
