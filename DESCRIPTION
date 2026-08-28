@@ -16,6 +16,7 @@ Suggests:
     rsdmx,
     countrycode,
     tidyverse,
+    ggplot2,
     ggcustom,
     testthat (>= 3.0.0),
     here (>= 1.0.1)
