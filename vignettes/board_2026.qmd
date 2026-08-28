@@ -259,7 +259,7 @@ p <- dat_gva_ind_comb|>
   filter_recode(
     measure = c("GVAHRS"),
     activity = c("Teollisuus" = "BTE", "Rakentaminen" = "F","Yksityiset palvelut" = "GTNXL"),
-    vars = c("fp_2020_ppp17")
+    vars = c("fp_2020_lc")
   ) |> 
   mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
   filter(geo != "DK") |>
@@ -280,9 +280,40 @@ save_fig(p, "tuottavuus-toimialat")
 
 ```
 
-Sarjat on muunnettu toimialakohtaisilla ostovoimapariteeteilla (GGDC/OECD 2017).
+
 OECD:n toimialatiedoissa teollisuus (B–E) sisältää vain tehdasteollisuuden, mikä
 koskee OECD:stä tulevia maita; ks. [Talouskasvu ja tuottavuus](main.qmd).
+
+## Tuottavuuden taso palveluissa
+
+Työn tuottavuus palveluissa, arvonlisä / työtunnit 2017 $ ostovoimakorjattuna (log-asteikko). Lähde: Eurostat, OECD, Tuottavuuslautakunta
+
+```{r}
+#| label: fig-tuottavuustaso-palvelut
+
+p <- dat_gva_ind_comb|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Yksityiset palvelut" = "GTNXL"),
+    vars = c("fp_2020_ppp17")
+  ) |> 
+  # mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  # scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") 
+
+save_fig(p, "tuottavuustaso-palvelut")
+
+```
 
 # Kustannuskilpailukyvyn kehitys
 
