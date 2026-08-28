@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">fiprod</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,14 +18,19 @@
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/competitiveness.html">Kustannuskilpailukyky</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/board_2026.html">Tuottavuuslautakunnan raportti 2026</a></li>
+    <li><a class="dropdown-item" href="../articles/competitiveness.html">Kustannuskilpailukyky</a></li>
     <li><a class="dropdown-item" href="../articles/ggdc.html">GGDC data</a></li>
     <li><a class="dropdown-item" href="../articles/main.html">Talouskasvu ja tuottavuus</a></li>
     <li><a class="dropdown-item" href="../articles/main_en.html">Economic growth and productivity</a></li>
+    <li><a class="dropdown-item" href="../articles/main_oecd.html">Talouskasvu ja tuottavuus (vain OECD)</a></li>
     <li><a class="dropdown-item" href="../articles/public.html">Julkisen sektorin tuottavuus</a></li>
+    <li><a class="dropdown-item" href="../articles/public_oecd.html">Julkisen sektorin tuottavuus (vain OECD)</a></li>
+    <li><a class="dropdown-item" href="../articles/tyotunnit.html">Työtunnit: Eurostat ja OECD</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/tuottavuuslautakunta/fiprod/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -49,10 +54,38 @@
 
       <dl><dt>
 
+          <code><a href="aggregate_activities.html">aggregate_activities()</a></code>
+
+        </dt>
+        <dd>Aggregate national accounts industries</dd>
+
+        <dt>
+
           <code><a href="check_factor_levels.html">check_factor_levels()</a></code>
 
         </dt>
         <dd>Tabulate factor level combinations (by time) against <code>values</code></dd>
+
+        <dt>
+
+          <code><a href="combine_geo_sources.html">combine_geo_sources()</a></code>
+
+        </dt>
+        <dd>Combine data sources country by country</dd>
+
+        <dt>
+
+          <code><a href="compare_sources.html">compare_sources()</a></code>
+
+        </dt>
+        <dd>Compare two data sources on their overlap</dd>
+
+        <dt>
+
+          <code><a href="comp_base_year.html">comp_base_year</a></code>
+
+        </dt>
+        <dd>Index base year of the competitiveness indicators</dd>
 
         <dt>
 
@@ -63,10 +96,73 @@
 
         <dt>
 
+          <code><a href="exh_eur_a.html">exh_eur_a</a></code>
+
+        </dt>
+        <dd>Annual exchange rates against the euro</dd>
+
+        <dt>
+
+          <code><a href="extend_with_change.html">extend_with_change()</a></code>
+
+        </dt>
+        <dd>Extend a series forward with growth rates from another source</dd>
+
+        <dt>
+
+          <code><a href="gdp_trading_gain.html">gdp_trading_gain()</a></code>
+
+        </dt>
+        <dd>Terms of trade adjusted volume of GDP</dd>
+
+        <dt>
+
+          <code><a href="geos_comp.html">geos_comp</a></code> <code><a href="geos_comp.html">geos_comp_es</a></code> <code><a href="geos_comp.html">geos_comp_oecd</a></code>
+
+        </dt>
+        <dd>Peer group of the price competitiveness indicators</dd>
+
+        <dt>
+
+          <code><a href="geos_eurostat.html">geos_eurostat</a></code>
+
+        </dt>
+        <dd>Countries taken from Eurostat when the sources are combined</dd>
+
+        <dt>
+
+          <code><a href="geos_oecd.html">geos_oecd</a></code>
+
+        </dt>
+        <dd>Countries of the OECD productivity database query</dd>
+
+        <dt>
+
+          <code><a href="geo_ea.html">geo_ea</a></code>
+
+        </dt>
+        <dd>Euro area countries</dd>
+
+        <dt>
+
           <code><a href="geo_names.html">geo_names()</a></code>
 
         </dt>
         <dd>Retrieve country/region name vectors by language</dd>
+
+        <dt>
+
+          <code><a href="geo_names_list.html">geo_names_list</a></code>
+
+        </dt>
+        <dd>Country names in Finnish and English</dd>
+
+        <dt>
+
+          <code><a href="ind_ulc.html">ind_ulc()</a></code>
+
+        </dt>
+        <dd>Unit labour cost index</dd>
 
         <dt>
 
@@ -105,17 +201,17 @@
 
         <dt>
 
+          <code><a href="prev_year_prices.html">prev_year_prices()</a></code> <code><a href="prev_year_prices.html">fixed_prices()</a></code>
+
+        </dt>
+        <dd>Convert between fixed and previous year's price series</dd>
+
+        <dt>
+
           <code><a href="read_ecfin_weights.html">read_ecfin_weights()</a></code>
 
         </dt>
         <dd>Read ecfin weights from zip file</dd>
-
-        <dt>
-
-          <code><a href="read_ecf_w_file.html">read_ecf_w_file()</a></code>
-
-        </dt>
-        <dd>read-function</dd>
 
         <dt>
 
@@ -140,6 +236,20 @@
 
         <dt>
 
+          <code><a href="save_fig.html">save_fig()</a></code>
+
+        </dt>
+        <dd>Save a report figure</dd>
+
+        <dt>
+
+          <code><a href="set_fig_defaults.html">set_fig_defaults()</a></code> <code><a href="set_fig_defaults.html">fig_defaults()</a></code>
+
+        </dt>
+        <dd>Defaults for saving report figures</dd>
+
+        <dt>
+
           <code><a href="weighted_gmean.html">weighted_gmean()</a></code>
 
         </dt>
@@ -147,17 +257,17 @@
 
         <dt>
 
+          <code><a href="weights_ecfin19.html">weights_ecfin19</a></code> <code><a href="weights_ecfin19.html">weights_ecfin20</a></code> <code><a href="weights_ecfin19.html">weights_ecfin27</a></code> <code><a href="weights_ecfin19.html">weights_ecfin37</a></code> <code><a href="weights_ecfin19.html">weights_ecfin42</a></code>
+
+        </dt>
+        <dd>Trade weights of the European Commission</dd>
+
+        <dt>
+
           <code><a href="weight_all.html">weight_all()</a></code> <code><a href="weight_all.html">weight_at()</a></code>
 
         </dt>
         <dd>Mass weighting</dd>
-
-        <dt>
-
-          <code><a href="weight_function.html">weight_function()</a></code>
-
-        </dt>
-        <dd>Weight function for weight_index</dd>
 
         <dt>
 

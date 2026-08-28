@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">fiprod</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,11 +35,15 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/competitiveness.html">Kustannuskilpailukyky</a></li>
+<li><a class="dropdown-item" href="articles/board_2026.html">Tuottavuuslautakunnan raportti 2026</a></li>
+    <li><a class="dropdown-item" href="articles/competitiveness.html">Kustannuskilpailukyky</a></li>
     <li><a class="dropdown-item" href="articles/ggdc.html">GGDC data</a></li>
     <li><a class="dropdown-item" href="articles/main.html">Talouskasvu ja tuottavuus</a></li>
     <li><a class="dropdown-item" href="articles/main_en.html">Economic growth and productivity</a></li>
+    <li><a class="dropdown-item" href="articles/main_oecd.html">Talouskasvu ja tuottavuus (vain OECD)</a></li>
     <li><a class="dropdown-item" href="articles/public.html">Julkisen sektorin tuottavuus</a></li>
+    <li><a class="dropdown-item" href="articles/public_oecd.html">Julkisen sektorin tuottavuus (vain OECD)</a></li>
+    <li><a class="dropdown-item" href="articles/tyotunnit.html">Työtunnit: Eurostat ja OECD</a></li>
   </ul>
 </li>
       </ul>
@@ -47,6 +51,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/tuottavuuslautakunta/fiprod/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -106,9 +111,55 @@
 <p><code>data_main.R</code> kokoaa valmiit Parquet-aineistot analyysia varten. Skripti määrittelee euroalueen maiden luettelon (<code>geo_ea</code>) ja mahdollistaa raakadataskriptien uudelleensuorituksen (<code>get_oecd_pdb.R</code>, <code>get_exch.R</code>) asettamalla <code>update = TRUE</code>. Pääasiallisesti se lataa aiemmin tuotetut taulut <code>dat_oecd_pdb_main</code>, <code>dat_oecd_pdb_ind</code>, <code>dat_ggdc_23</code> ja <code>dat_ppp_va_ggdc_oecd</code>, joiden pohjalta rakennetaan <code>dat_gva_ind</code>.</p>
 <p><code>dat_gva_ind</code> syntyy, kun OECD:n toimialataulusta (<code>dat_oecd_pdb_ind</code>) poimitaan käyvän hintatason (<code>V</code>) ja kiinteähintaisen volyymin (ketjutettu perusvuosi 2020, <code>LR</code>) sarjat. Ne nimetään uudelleen (<code>cp</code>, <code>fp_2020_lc</code>) ja yhdistetään GGDC:n tuottamiin PPP-kertoimiin vuoden 2017 tasolla. Tällöin muodostetaan kaksi lisämuuttujaa: <code>fp_2020_ppp17</code>, joka muuntaa kiinteähintaisen paikallisvaluutan PPP-tasoiseen USD:hen (<code>fp_2020_lc / ppp_va</code>), ja <code>fp_2020_xr17</code>, joka muuntaa saman volyymin markkinakurssiin perustuvaksi USD-arvoksi hyödyntäen <code><a href="reference/convert_currency.html">convert_currency()</a></code>-funktiota ja Eurostatin valuuttadataa. Lopuksi tiedot muutetaan pitkäksi muodoksi (<code>vars</code>, <code>values</code>) ja tallennetaan <code><a href="reference/save_dat.html">save_dat()</a></code>- funktiolla Parquet-muotoon, jolloin taulu on saatavilla kutsulla <code>load_dat("dat_gva_ind")</code>.</p>
 </div>
+<div class="section level3">
+<h3 id="eurostatin-ja-oecdn-yhdistäminen-data-rawget_eurostat_nar">Eurostatin ja OECD:n yhdistäminen (<code>data-raw/get_eurostat_na.R</code>)<a class="anchor" aria-label="anchor" href="#eurostatin-ja-oecdn-yhdist%C3%A4minen-data-rawget_eurostat_nar"></a>
+</h3>
+<p>OECD:n tuottavuustietokanta päivittyy selvästi Eurostatia hitaammin, joten samat sarjat voidaan hakea EU/ETA-maille Eurostatista ja loput (US, JP, UK) OECD:ltä. <code>get_eurostat_na.R</code> hakee Eurostatin taulut <code>nama_10_a10</code> (arvonlisäys <code>B1G</code> käyvin hinnoin <code>CP_MNAC</code>, edellisen vuoden hinnoin <code>PYP_MNAC</code> ja kiinteähintaisena <code>CLV20_MNAC</code>) sekä <code>nama_10_a10_e</code> (työlliset <code>EMP_DC</code> tuhansina henkilöinä <code>THS_PER</code> ja tuhansina tunteina <code>THS_HW</code>) ja muuntaa ne OECD:n tuottavuustietokannan muotoon: sarakkeet <code>time</code>, <code>geo</code>, <code>measure</code> (<code>GVA</code>, <code>EMP</code>, <code>HRS</code>), <code>activity</code>, <code>unit_measure</code>, <code>price_base</code> (<code>V</code>, <code>LR</code>, <code>Y</code>, <code>_Z</code>) ja <code>values</code>.</p>
+<p>NACE Rev. 2:n A*10-toimialat nimetään OECD:n koodeiksi (<code>TOTAL</code> → <code>_T</code>, <code>B-E</code> → <code>BTE</code>, <code>G-I</code> → <code>GTI</code>, <code>O-Q</code> → <code>OTQ</code>, <code>R-U</code> → <code>RTU</code> jne.). Eurostat ei julkaise OECD:n yrityssektoria <code>BTNXL</code> (toimialat B–N pl. L) eikä sen palveluosaa <code>GTNXL</code> (G–N pl. L), joten ne lasketaan <code><a href="reference/aggregate_activities.html">aggregate_activities()</a></code>-funktiolla. <strong>Kiinteähintaisia sarjoja ei voi laskea yhteen</strong>, koska jokaisella sarjalla on oma ketjutushistoriansa. Siksi ne muunnetaan ensin edellisen vuoden hintaisiksi (Eurostatin <code>PYP_MNAC</code> käytetään sellaisenaan silloin kun se on saatavilla, muuten se lasketaan <code><a href="reference/prev_year_prices.html">prev_year_prices()</a></code>-funktiolla), summataan ja ketjutetaan takaisin vuoden 2020 hintoihin <code><a href="reference/prev_year_prices.html">fixed_prices()</a></code>-funktiolla. Aggregaatti on <code>NA</code> jokaisena vuonna, jolta joltakin osatoimialalta puuttuu havainto, jottei osasummaa erehdytä lukemaan kokonaisuutena. Tulos tallennetaan tauluun <code>dat_eurostat_na_ind</code>.</p>
+<p><code>data_main.R</code> yhdistää lähteet <code><a href="reference/combine_geo_sources.html">combine_geo_sources()</a></code>-funktiolla: <code>geos_eurostat</code> -listan maat tulevat Eurostatista ja loput OECD:ltä, ja <code>source</code>-sarake kertoo kummasta rivi on peräisin. OECD:n taulusta johdetaan ensin työtunnit ja työlliset (<code>GVA / GVAHRS</code> ja <code>GVA / GVAEMP</code>), jotta se on samassa muodossa kuin Eurostatin taulu. Koska Eurostat raportoi arvonlisäyksen miljoonina kansallisen valuutan yksikköinä ja työpanoksen tuhansina, lähteiden kertoimet voivat poiketa toisistaan. <code><a href="reference/compare_sources.html">compare_sources()</a></code> laskee sarjojen suhteen niissä maissa, jotka molemmat lähteet kattavat; skripti pysähtyy virheeseen, jos suhde poikkeaa <code>oecd_scale</code>-vakiosta, jolloin kerroin asetetaan käsin. Tuloksena syntyvät taulut <code>dat_na_ind_comb</code> (yhdistetty toimialataulu) ja <code>dat_gva_ind_comb</code>, joka on samassa muodossa kuin <code>dat_gva_ind</code>.</p>
+<p>Yhdistetyt taulut ovat Eurostatin yksiköissä: arvonlisäys ja BKT miljoonina kansallista valuuttaa, työlliset, työtunnit ja väestö tuhansina. Eurostat ei siis käytä samaa kerrointa läpi aineiston, joten suhdeluvut (<code>GVAHRS</code>, <code>GVAEMP</code>, <code>GDPPOP</code>, <code>HRSPOP</code>) skaalataan <code>eurostat_mult</code>-kertoimilla, jotta ne tulevat OECD:n yksiköissä eli aidosti per tunti tai per henkilö. Taulut <code>dat_gva_ind_comb</code> ja <code>dat_gdp_main</code> laskevat arvonlisän työtuntia kohden eri reittejä, joten ne toimivat toistensa tarkistuksena: <code>data_main.R</code> vertaa niitä ja varoittaa, jos kertoimet ovat epätahdissa.</p>
+</div>
+<div class="section level3">
+<h3 id="koko-talouden-yhdistäminen-data-rawget_eurostat_gdpr">Koko talouden yhdistäminen (<code>data-raw/get_eurostat_gdp.R</code>)<a class="anchor" aria-label="anchor" href="#koko-talouden-yhdist%C3%A4minen-data-rawget_eurostat_gdpr"></a>
+</h3>
+<p>Sama yhdistäminen tehdään myös OECD:n päätaululle <code>dat_oecd_pdb_main</code>. <code>get_eurostat_gdp.R</code> hakee Eurostatin <code>nama_10_gdp</code>-taulusta bruttokansantuotteen (<code>B1GQ</code>) käyvin hinnoin, edellisen vuoden hinnoin ja kiinteähintaisena. Väestöä ei julkaista sellaisenaan, vaan se johdetaan BKT:sta miljoonina euroina (<code>CP_MEUR</code>, <code>nama_10_gdp</code>) ja BKT:sta euroa per asukas (<code>CP_EUR_HAB</code>) — per capita -yksiköt ovat <code>nama_10_pc</code>-taulussa, eivät <code>nama_10_gdp</code>:ssä. Eurostat pyöristää per capita -luvun, joten väestön tasoon jää noin 0,01 %:n pyöristysvirhe, joka kumoutuu indekseistä ja kasvuvauhdeista. Väestö raportoidaan tuhansina henkilöinä, samassa yksikössä kuin Eurostatin työlliset ja työtunnit. Arvonlisäys, työlliset ja työtunnit koko taloudelle (<code>_T</code>) ja yrityssektorille (<code>BTNXL</code>) otetaan suoraan taulusta <code>dat_eurostat_na_ind</code>, joten niitä ei haeta uudestaan. Tulos on <code>dat_eurostat_na_gdp</code>.</p>
+<p><code>data_main.R</code> laskee näistä OECD:n julkaisemat suhdeluvut (<code>GDPPOP</code>, <code>HRSPOP</code>, <code>GVAEMP</code>, <code>GVAHRS</code>), yhdistää lähteet kuten toimialadatassa ja tallentaa taulun <code>dat_gdp_main</code>. Se on samassa muodossa kuin <code>dat_oecd_pdb_main</code> (<code>measure</code>, <code>activity</code>, <code>unit_measure</code>, <code>price_base</code>, <code>conversion_type</code>, <code>var_id</code>) ja lisänä on <code>source</code>-sarake.</p>
+<p>Eurostat ei julkaise ostovoimakorjattuja sarjoja USD:ssa, joten <code>conversion_type = "PPP"</code> -sarjat muodostetaan OECD:n omilla muuntokertoimilla: kerroin luetaan saman OECD-sarjan kahdesta versiosta (<code>XDC</code> jaettuna <code>USD_PPP</code>:llä). Kiinteähintaisilla sarjoilla kerroin on perusvuoden PPP eikä se vaihtele ajassa; käyvin hinnoin se vaihtelee, ja viimeisin kerroin jatketaan niille vuosille, jotka Eurostatissa jo ovat mutta OECD:llä ei. Yhdysvalloille kerroin on määritelmällisesti 1, koska OECD:n PPP-sarjat ovat suhteessa Yhdysvaltoihin — samasta syystä OECD:n taulussa ei ole USA:lle lainkaan <code>_Z</code>-sarjoja, ja niiden tilalla käytetään PPP-sarjoja. Maa, joka ei ole OECD:n päätaulussa lainkaan, jää ilman PPP-sarjoja; skripti tulostaa niiden maiden listan.</p>
+</div>
+<div class="section level3">
+<h3 id="hintakilpailukyky-data-rawget_eurostat_ulcr">Hintakilpailukyky (<code>data-raw/get_eurostat_ulc.R</code>)<a class="anchor" aria-label="anchor" href="#hintakilpailukyky-data-rawget_eurostat_ulcr"></a>
+</h3>
+<p>Hintakilpailukyvyn mittarit ovat vanhasta <a href="https://github.com/pttry/ficomp" class="external-link">ficomp</a>-paketista, jolla tuottavuuslautakunnan raportin kilpailukykyluku on aiemmin tehty. Mukaan on otettu ydin eli yksikkötyökustannuslaskenta; ficompin muut aineistot (AMECO, BIS:n ja IMF:n painot, ECB, OECD Economic Outlook, STAN, ulkomaankauppa) on jätetty pois.</p>
+<p><code>get_eurostat_ulc.R</code> hakee <code>nama_10_gdp</code>-taulusta bruttokansantuotteen, arvonlisäyksen, palkansaajakorvaukset (<code>D1</code>) sekä viennin ja tuonnin, ja <code>nama_10_a10_e</code>-taulusta työlliset ja palkansaajat koko taloudelle. Tulos <code>dat_eurostat_ulc</code> on leveässä muodossa, jossa jokainen sarake on taloustoimi ja yksikkö (esim. <code>B1GQ__CLV20_MNAC</code>), koska jokainen mittari yhdistää useita taloustoimia.</p>
+<p><code>data_main.R</code> laskee näistä taulun <code>dat_ulc_comp</code>, jossa on sarakkeet <code>time</code>, <code>geo</code>, <code>vars</code>, <code>values</code> (indeksi, perusvuosi <code>comp_base_year</code>) ja <code>rel</code> (suhteessa verrokkimaihin). Mittarit ovat:</p>
+<ul>
+<li>
+<code>nulc</code>, <code>nulc_eur</code>, <code>nulc_va</code> — nimellinen yksikkötyökustannus koko taloudelle omassa valuutassa, yhteisessä valuutassa ja arvonlisäyksestä laskettuna</li>
+<li>
+<code>nulc_aper</code>, <code>nulc_aper_eur</code> — yrittäjäkorjattu eli palkansaajakorvaukset palkansaajaa kohden suhteessa tuotantoon työllistä kohden</li>
+<li>
+<code>nulc_aper_atot</code>, <code>nulc_aper_eur_atot</code> — vaihtosuhdekorjattu, jossa vienti arvotetaan tuontihinnoin (<code><a href="reference/gdp_trading_gain.html">gdp_trading_gain()</a></code>)</li>
+<li>
+<code>rulc_aper</code> — reaalinen eli BKT:n hintaindeksillä deflatoitu</li>
+<li>
+<code>lp_ind</code>, <code>d1_per_ind</code>, <code>exch_eur_ind</code> — hajotelman osatekijät: työn tuottavuus, palkansaajakorvaukset työntekijää kohden ja valuuttakurssi</li>
+</ul>
+<p>Kaksi funktiota on paketissa: <code><a href="reference/ind_ulc.html">ind_ulc()</a></code> laskee yksikkötyökustannusindeksin ja <code><a href="reference/gdp_trading_gain.html">gdp_trading_gain()</a></code> vaihtosuhdekorjatun tuotannon volyymin. Suhteelliset luvut lasketaan <code><a href="reference/weight_index.html">weight_index2()</a></code>-funktiolla ECFIN:n kauppapainoilla (<code>weights_ecfin37</code>).</p>
+<p>Verrokkijoukko <code>geos_comp</code> on ficompin 17 maata. Niistä 15 (<code>geos_comp_es</code>) tulee Eurostatista, Sveitsi mukaan lukien (EFTA). Yhdysvallat ja Japani (<code>geos_comp_oecd</code>) eivät ole Eurostatin kansantalouden tilinpidossa, joten ne otetaan OECD:n tuottavuustietokannasta: <code>nulc_aper</code> lasketaan sarjoista <code>LCEMP</code> ja <code>GDPEMP</code>, reaalinen <code>rulc_aper</code> niiden käypä- ja kiinteähintaisista versioista, ja valuuttakurssi taulusta <code>exh_eur_a</code>. Yksikkötyökustannus rakennetaan osatekijöistä eikä oteta OECD:n julkaisemaa <code>ULCE</code>-sarjaa, jotta hajotelman identiteetti <code>nulc_aper = 100 × d1_per_ind / lp_ind</code> pitää tarkasti kaikilla mailla; <code>data_main.R</code> vertaa tulosta <code>ULCE</code>:en ajon yhteydessä.</p>
+<p>OECD:n taulussa ei ole vientiä eikä tuontia, joten vaihtosuhdekorjatut ja yrittäjäkorjaamattomat mittarit ovat vain Eurostat-mailla ja ne painotetaan 15 maan kesken. Taulun <code>peers</code>-sarake kertoo kumpaa joukkoa vasten kukin suhdeluku on laskettu.</p>
+<p>OECD:n vuositiedot päättyvät Yhdysvalloille ja Japanille vuoden tai kaksi muita aiemmin. Koska <code><a href="reference/weight_index.html">weight_index2()</a></code> palauttaa NA:n jos yksikin verrokki puuttuu, viimeinen vuosi katoaisi muuten koko joukolta. Sarjat jatketaan siksi OECD:n neljännesvuositaulun (<code>dat_oecd_ulcq</code>) kasvuvauhdilla funktiolla <code><a href="reference/extend_with_change.html">extend_with_change()</a></code>. Kasvu lasketaan niistä neljänneksistä, jotka kummaltakin vuodelta löytyvät, joten vajaa vuosi verrataan edellisen vuoden samaan jaksoon eikä koko vuoteen; täydellä vuodella tulos on täsmälleen vuosikeskiarvon kasvu. Vähimmäismäärä on <code>ulc_min_quarters</code> (oletus 2). Jatketut havainnot on merkitty tuloksen <code>extended</code>-sarakkeeseen. Kuviot ovat vinjetissä <code>competitiveness.qmd</code>.</p>
 </div>
 </div>
-  </main><aside class="col-md-3"><div class="license">
+</div>
+  </main><aside class="col-md-3"><div class="links">
+<h2 data-toc-skip>Links</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/tuottavuuslautakunta/fiprod/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/tuottavuuslautakunta/fiprod/issues" class="external-link">Report a bug</a></li>
+</ul>
+</div>
+
+<div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>

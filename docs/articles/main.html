@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">fiprod</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,11 +35,13 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/competitiveness.html">Kustannuskilpailukyky</a></li>
-    <li><a class="dropdown-item" href="../articles/ggdc.html">GGDC data</a></li>
+<li><a class="dropdown-item" href="../articles/board_2026.html">Tuottavuuslautakunnan raportti 2026</a></li>
+    <li><a class="dropdown-item" href="../articles/competitiveness.html">Kustannuskilpailukyky</a></li>
     <li><a class="dropdown-item" href="../articles/main.html">Talouskasvu ja tuottavuus</a></li>
-    <li><a class="dropdown-item" href="../articles/main_en.html">Economic growth and productivity</a></li>
+    <li><a class="dropdown-item" href="../articles/main_oecd.html">Talouskasvu ja tuottavuus (vain OECD)</a></li>
     <li><a class="dropdown-item" href="../articles/public.html">Julkisen sektorin tuottavuus</a></li>
+    <li><a class="dropdown-item" href="../articles/public_oecd.html">Julkisen sektorin tuottavuus (vain OECD)</a></li>
+    <li><a class="dropdown-item" href="../articles/tyotunnit.html">Työtunnit: Eurostat ja OECD</a></li>
   </ul>
 </li>
       </ul>
@@ -47,6 +49,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/tuottavuuslautakunta/fiprod/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -61,7 +64,7 @@
 
 
 
-
+      <small class="dont-index">Source: <a href="https://github.com/tuottavuuslautakunta/fiprod/blob/HEAD/vignettes/main.qmd" class="external-link"><code>vignettes/main.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -71,7 +74,7 @@
 
 
     <p>KESKEN</p>
-<p>Päivitetty: 2026-05-26</p>
+<p>Päivitetty: 2026-08-28</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># library(fiprod)</span></span>
@@ -88,11 +91,9 @@
 <span><span class="va">y_log_breaks</span> <span class="op">&lt;-</span> <span class="fu">scales</span><span class="fu">::</span><span class="fu"><a href="https://scales.r-lib.org/reference/breaks_pretty.html" class="external-link">breaks_pretty</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
 <span></span>
 <span></span>
-<span><span class="va">dat_oecd_pdb_main</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_dat.html">load_dat</a></span><span class="op">(</span><span class="st">"dat_oecd_pdb_main"</span><span class="op">)</span> </span>
+<span><span class="va">dat_gdp_main</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_dat.html">load_dat</a></span><span class="op">(</span><span class="st">"dat_gdp_main"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dat_oecd_pdb_ind</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_dat.html">load_dat</a></span><span class="op">(</span><span class="st">"dat_oecd_pdb_ind"</span><span class="op">)</span> </span>
-<span></span>
-<span><span class="va">dat_gva_ind</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_dat.html">load_dat</a></span><span class="op">(</span><span class="st">"dat_gva_ind"</span><span class="op">)</span> </span>
+<span><span class="va">dat_gva_ind_comb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_dat.html">load_dat</a></span><span class="op">(</span><span class="st">"dat_gva_ind_comb"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">geos</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"Suomi"</span>         <span class="op">=</span> <span class="st">"FI"</span>,</span>
@@ -115,6 +116,9 @@
 </h2>
 <p>Päälähteenä käytetty <a href="https://data-explorer.oecd.org/vis?fs%5B0%5D=Topic%2C1%7CEconomy%23ECO%23%7CProductivity%23ECO_PRO%23&amp;pg=0&amp;fc=Topic&amp;bp=true&amp;snb=7&amp;df%5Bds%5D=dsDisseminateFinalDMZ&amp;df%5Bid%5D=DSD_PDB%40DF_PDB&amp;df%5Bag%5D=OECD.SDD.TPS&amp;df%5Bvs%5D=2.0&amp;dq=.A.GVAHRS._T.XDC_H..N..&amp;lom=LASTNPERIODS&amp;lo=5&amp;to%5BTIME_PERIOD%5D=false&amp;isAvailabilityDisabled=false" class="external-link">OECD productivity database</a>:n tietoja (<a href="https://www.oecd.org/en/publications/the-revamp-of-the-oecd-productivity-database_f07c55d4-en.html" class="external-link">tietokannan uudistus</a> ja <a href="https://www.oecd.org/content/dam/oecd/en/data/methods/OECD-Productivity-Statistics-Database-metadata.pdf" class="external-link">metadata</a>).</p>
 <p>Toimialoille hintatasotiedot ovat <a href="https://www.rug.nl/ggdc/productivity/pld/" class="external-link">GGDC Productivity level</a> tietokannasta.</p>
+<p>OECD:n tietokanta päivittyy kuitenkin selvästi Eurostatia hitaammin, joten tässä käytetään yhdistettyä aineistoa: EU- ja ETA-maiden tiedot ovat Eurostatin kansantalouden tilinpidosta (<code>nama_10_a10</code>, <code>nama_10_a10_e</code>, <code>nama_10_gdp</code> ja <code>nama_10_pc</code>) ja muiden maiden (US, JP, UK) OECD:ltä. Toimialat ovat NACE:n A*10-tasolla, ja OECD:n yrityssektori <code>BTNXL</code> (toimialat B–N pl. L) on laskettu Eurostatin toimialoista edellisen vuoden hintaisten sarjojen kautta, koska kiinteähintaisia sarjoja ei voi laskea yhteen. Ostovoimapariteetit ovat OECD:n omia. <code>source</code>-sarake kertoo, kummasta lähteestä kunkin maan tiedot ovat. Pelkkään OECD:n aineistoon perustuva versio on <code>main_oecd.qmd</code>.</p>
+<p>Työtuntien osalta lähteet poikkeavat toisistaan kymmenellä maalla, mikä siirtää työn tuottavuuden <strong>tasoa</strong> mutta ei juuri kasvuvauhtia. Ks. <code>tyotunnit.qmd</code>.</p>
+<p>Taulut ovat <code>dat_gdp_main</code> (koko talous) ja <code>dat_gva_ind_comb</code> (toimialat).</p>
 </section><section class="level2"><h2 id="bktn-kasvu">BKT:n kasvu<a class="anchor" aria-label="anchor" href="#bktn-kasvu"></a>
 </h2>
 <div class="cell">
@@ -125,7 +129,7 @@
 <span><span class="co"># </span></span>
 <span><span class="co"># LR perusvuosi 2020 (lisäksi L, jossa perusvuosi vaihteleva).</span></span>
 <span></span>
-<span><span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<span><span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    geo <span class="op">=</span> <span class="va">geos</span>,</span>
@@ -146,8 +150,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"BKT per capita"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100 (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -160,7 +164,7 @@
 </h2>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    geo <span class="op">=</span> <span class="va">geos</span>,</span>
@@ -182,8 +186,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"BKT per capita"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100 (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -197,7 +201,7 @@
 <p>Yrityssektorilla viittaan tässä toimialoihin B-N pl. L. Niillä tuottavuuden mittaaminen on vähemmän ongelmallista kuin pois jätetyillä toimialoilla.</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -220,8 +224,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Työn tuottavuus, arvonlisä / työtunnit"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100 (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -235,7 +239,7 @@
 <p>Näillä toimialoilla on monia tuottavuuden mittaamiseen liityviä ongelmia. Kts. esim. Tuottavuuslautakunta (2019).</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -258,8 +262,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Työn tuottavuus, arvonlisä / työtunnit"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100 (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -272,7 +276,7 @@
 </h3>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span><span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span><span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -295,8 +299,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Työn tuottavuus, arvonlisä / työtunnit"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100 (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -309,7 +313,7 @@
 </h3>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVA"</span><span class="op">)</span>,</span>
@@ -324,12 +328,11 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">geo</span>, nrow <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_date.html" class="external-link">scale_x_date</a></span><span class="op">(</span>date_labels <span class="op">=</span> <span class="st">"%y"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_log10</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="va">y_log_breaks</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Osuus arvonlisäyksestä"</span>,</span>
 <span>    subtitle <span class="op">=</span> <span class="st">"%"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span> </span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -340,7 +343,7 @@
 </div>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVA"</span><span class="op">)</span>,</span>
@@ -361,12 +364,11 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">geo</span>, nrow <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_date.html" class="external-link">scale_x_date</a></span><span class="op">(</span>date_labels <span class="op">=</span> <span class="st">"%y"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_log10</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="va">y_log_breaks</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Osuus arvonlisäyksestä"</span>,</span>
 <span>    subtitle <span class="op">=</span> <span class="st">"%"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span> </span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -378,7 +380,7 @@
 <p>OECD:n tiedoissa on virhe. Muut pitäisi olla nolla, mutta tiedoissa Teollisuus sisältää vain tehdasteollisuuden.</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVA"</span>, <span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -403,12 +405,11 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">geo</span>, nrow <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_date.html" class="external-link">scale_x_date</a></span><span class="op">(</span>date_labels <span class="op">=</span> <span class="st">"%y"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_log10</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="va">y_log_breaks</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Osuus työtunneista"</span>,</span>
 <span>    subtitle <span class="op">=</span> <span class="st">"%"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span> </span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -422,7 +423,7 @@
 <p>BKT:n ja tuottavuuden kasvua on helpompi vertailla kuin tasoa, sillä maissa on eri hintasot ja myös valuuttakurssit vaihtelevat paljon.</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GDPPOP"</span><span class="op">)</span>,</span>
@@ -443,8 +444,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"BKT suhteessa väestöön"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Vuoden 2020 $ hinnoin ostovoimakorjattuna"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Vuoden 2020 $ hinnoin ostovoimakorjattuna (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -463,12 +464,13 @@
 <p>Perusvuosi 2020</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GDPPOP"</span><span class="op">)</span>,</span>
 <span>    activity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Koko talous"</span> <span class="op">=</span> <span class="st">"_T"</span><span class="op">)</span>,</span>
-<span>    price_base <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LR"</span><span class="op">)</span>,        <span class="co"># </span></span>
+<span>    price_base <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LR"</span><span class="op">)</span>, </span>
+<span>    unit_measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"XDC_PS"</span>, <span class="st">"USD_PPP_PS"</span><span class="op">)</span>,</span>
 <span>    conversion_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>MP <span class="op">=</span> <span class="st">"_Z"</span>,<span class="st">"PPP"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">unit_measure</span>,  <span class="op">-</span><span class="va">var_id</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
@@ -491,8 +493,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"BKT per capita kiintein hinnoin"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Vuoden 2020 USD"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Vuoden 2020 USD (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -505,12 +507,13 @@
 </h3>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>     measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GDPPOP"</span><span class="op">)</span>,</span>
 <span>    activity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Koko talous"</span> <span class="op">=</span> <span class="st">"_T"</span><span class="op">)</span>,</span>
-<span>    price_base <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"V"</span><span class="op">)</span>,        <span class="co"># </span></span>
+<span>    price_base <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"V"</span><span class="op">)</span>,   </span>
+<span>    unit_measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"XDC_PS"</span>, <span class="st">"USD_PPP_PS"</span><span class="op">)</span>, </span>
 <span>    conversion_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>MP <span class="op">=</span> <span class="st">"_Z"</span>,<span class="st">"PPP"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">unit_measure</span>,  <span class="op">-</span><span class="va">var_id</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
@@ -535,8 +538,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"BKT per capita nimellisin hinnoin"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Vuoden 2020 USD"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Vuoden 2020 USD (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -552,17 +555,25 @@
 <p>Selkeästi tasoero tulee työn tuottavuudesta, ei työtunneista. Työn tuottavuuden taso ero Yhdysvaltoihin on kuitenkin paljon suurempi kuin BKT per capita, vaikka työntunnit per capita on melkein sama. Miksi näin?</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    geo <span class="op">=</span> <span class="va">geos</span>,</span>
-<span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Työn tuottavuus"</span> <span class="op">=</span> <span class="st">"GVAHRS"</span>, <span class="st">"Tunnit per capita"</span> <span class="op">=</span> <span class="st">"HRSPOP"</span><span class="op">)</span>,</span>
+<span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GDP"</span>, <span class="st">"HRS"</span>, <span class="st">"HRSPOP"</span>, <span class="st">"EMP"</span>, <span class="st">"POP"</span>, <span class="st">"WAP"</span><span class="op">)</span>,</span>
 <span>    activity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Koko talous"</span> <span class="op">=</span> <span class="st">"_T"</span><span class="op">)</span>,</span>
-<span>    unit_measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"USD_PPP_H"</span>, <span class="st">"H_PS"</span><span class="op">)</span>,</span>
+<span>    unit_measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"USD_PPP"</span>, <span class="st">"H"</span>, <span class="st">"H_PS"</span>, <span class="st">"PS"</span><span class="op">)</span>,</span>
 <span>    price_base <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LR"</span>, <span class="st">"_Z"</span><span class="op">)</span>,        </span>
 <span>    conversion_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PPP"</span>, <span class="st">"_Z"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">unit_measure</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">time</span>, <span class="va">geo</span>, <span class="va">measure</span>, <span class="va">values</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_wider.html" class="external-link">pivot_wider</a></span><span class="op">(</span>names_from <span class="op">=</span> <span class="st">"measure"</span>, values_from <span class="op">=</span> <span class="st">"values"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    time <span class="op">=</span> <span class="va">time</span>,</span>
+<span>    geo <span class="op">=</span> <span class="va">geo</span>,</span>
+<span>    <span class="st">"BKT per työtunnit"</span> <span class="op">=</span> <span class="va">GDP</span> <span class="op">/</span> <span class="va">HRS</span>,</span>
+<span>    <span class="st">"TYötunnit per väestö"</span> <span class="op">=</span> <span class="va">HRS</span> <span class="op">/</span> <span class="va">POP</span>,</span>
+<span>    .keep <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html" class="external-link">pivot_longer</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"time"</span>, <span class="st">"geo"</span><span class="op">)</span>, names_to <span class="op">=</span> <span class="st">"measure"</span>, values_to <span class="op">=</span> <span class="st">"values"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">time</span>, <span class="va">values</span>, colour <span class="op">=</span> <span class="va">geo</span>, linewidth <span class="op">=</span> <span class="va">geo</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">measure</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
@@ -573,8 +584,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Työn tuottavuus ja työtunnit"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Indeksi, 2007 = 100 (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -587,7 +598,7 @@
 <p>Eurooppalaisessa tilinpidossa BKT = arvonlisä + tuoteverot - tukipalkkiot. Yhdysvalloissa BKT ja arvonlisä ovat samoja ja tuoteverot ja tukipalkkiot lasketaan mukaan jo arvonlisätasolla.</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">var_id</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS-USD_PPP_H-LR-PPP"</span>, </span>
 <span>                       <span class="st">"GDP-USD_PPP-LR-PPP"</span>, </span>
@@ -619,8 +630,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"BKT ja arvonlisä työtuntia kohden"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Osvoimakorjattu 2020 $"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Osvoimakorjattu 2020 $ (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -631,7 +642,7 @@
 </div>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    geo <span class="op">=</span> <span class="va">geos</span>,</span>
@@ -649,8 +660,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"BKT ja arvonlisä"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"Osvoimakorjattu 2020 $"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Osvoimakorjattu 2020 $ (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_hline</a></span><span class="op">(</span>yintercept <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
@@ -665,7 +676,7 @@
 <p>Yksityisellä sektorilla tarkoitetaan OECD:n tilastossa kohtuullisen luotettavasti mitattavaa osaa taloudesta ja siihen sisältyvät toimialat laajasta teollisuudesta (B, C, E, D), rakentaminen (F) ja markkinapalvelut (G-N pl. L). Siitä jää ulkopuolelle siis maatalous, kiinteistöala, julkisluonteiset palvelut (eli julkinen hallnto, koulutus sekä sosiaali- ja terveyspalvelut. Myös näihin sisältyvät yksitykset palvelut) sekä pienet palvelualat (R, S, T).</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -689,8 +700,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Arvonlisä / työtunnit"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"2020 $"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"2020 $ (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span> </span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -704,13 +715,14 @@
 <p>Toimialoittaiset tiedot on hintatasokorjattu käyttämällä GGDC:n Productivity level dabase:n tietoja toimialoittaisista PPP hintatasoista. OECD:n tietokannassa ei ole ostovoimakorjattuja sarjoja toimialaoille.</p>
 <p>Koko talouden ja toimialaryhmien hinnat on aggregoitu arvonlisäpainotettuina keskiarvoina. Seuraavassa on tarkasteltu hintatasokorjatun bruttoarvonlisän eroja koko talouden tasolla OECD:n ja GGDC:n PPP tiedoilla laskettuna.</p>
 <p>Sarjoissa kuuluukin olla pieni ero, koska OECD:n perusvuosi on 2020 ja GGDC:n 2017. Tarkastelluilla mailla erot selittyvät juuri perusvuodella.</p>
+<p>Molemmat sarjat tulevat nyt samasta yhdistetystä volyymiaineistosta, joten ero on puhtaasti hintatasokorjauksen lähteestä ja perusvuodesta.</p>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># </span></span>
-<span><span class="co"># dat_gva_ind |&gt; str()</span></span>
-<span><span class="co"># dat_oecd_pdb_main |&gt; str()</span></span>
+<span><span class="co"># dat_gva_ind_comb |&gt; str()</span></span>
+<span><span class="co"># dat_gdp_main |&gt; str()</span></span>
 <span></span>
-<span><span class="va">dat1</span> <span class="op">&lt;-</span> <span class="va">dat_oecd_pdb_main</span> <span class="op">|&gt;</span> </span>
+<span><span class="va">dat1</span> <span class="op">&lt;-</span> <span class="va">dat_gdp_main</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    geo <span class="op">=</span> <span class="va">geos</span>,</span>
@@ -722,7 +734,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">time</span>, <span class="va">geo</span>, <span class="va">values</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>ppp_source <span class="op">=</span> <span class="st">"oecd"</span><span class="op">)</span></span>
 <span>  </span>
-<span><span class="va">dat2</span> <span class="op">&lt;-</span> <span class="va">dat_gva_ind</span> <span class="op">|&gt;</span> </span>
+<span><span class="va">dat2</span> <span class="op">&lt;-</span> <span class="va">dat_gva_ind_comb</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    geo <span class="op">=</span> <span class="va">geos</span>,</span>
@@ -742,7 +754,7 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_legend_bot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Bruttoarvonlisä koko taloudessa"</span>,</span>
-<span>       subtitle <span class="op">=</span> <span class="st">"Mrd. PPP dollaria 2020 tai 2017 hinnoin"</span><span class="op">)</span></span></code></pre></div>
+<span>       subtitle <span class="op">=</span> <span class="st">"Mrd. PPP dollaria 2020 tai 2017 hinnoin (log-asteikko)"</span><span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
 <figure><p><img src="main_files/figure-html/unnamed-chunk-16-1.png" width="672"></p>
@@ -756,7 +768,7 @@
 </h3>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span><span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span><span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -779,7 +791,7 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Arvonlisä / työtunnit"</span>,</span>
 <span>    subtitle <span class="op">=</span> <span class="st">"Vuoden 2017 $, ostovoimakorjattuna, logaritminen asteikko, log-asteikko"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, GGDC, Tuottavuuslautakunta"</span></span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, GGDC, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -792,7 +804,7 @@
 </h3>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span><span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span><span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -814,8 +826,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Arvonlisä / työtunnit"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"2017 $, valuuttakurssilla ja ostovoimakorjattuna"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"2017 $, valuuttakurssilla ja ostovoimakorjattuna (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -826,7 +838,7 @@
 </div>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span><span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span><span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -848,8 +860,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Arvonlisä / työtunnit"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"2017 $, valuuttakurssilla ja ostovoimakorjattuna"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"2017 $, valuuttakurssilla ja ostovoimakorjattuna (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span> </span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -860,7 +872,7 @@
 </div>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span><span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span><span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -882,8 +894,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Arvonlisä / työtunnit"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"2017 $ ostovoimakorjattuna"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"2017 $ ostovoimakorjattuna (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span> </span></code></pre></div>
 </details><div class="cell-output-display">
 <div>
@@ -894,7 +906,7 @@
 </div>
 <div class="cell">
 <details class="code-fold"><summary>Näytä koodi</summary><div class="sourceCode cell-code" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_gva_ind</span><span class="op">|&gt;</span> </span>
+<code class="sourceCode R"><span><span class="va">dat_gva_ind_comb</span><span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op">&gt;=</span> <span class="st">"1995-01-01"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/pttdatahaku/man/filter_recode.html" class="external-link">filter_recode</a></span><span class="op">(</span></span>
 <span>    measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GVAHRS"</span><span class="op">)</span>,</span>
@@ -916,8 +928,8 @@
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/ggcustom/man/theme_helpers.html" class="external-link">the_title_blank</a></span><span class="op">(</span><span class="st">"xyl"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Arvonlisä / työtunnit"</span>,</span>
-<span>    subtitle <span class="op">=</span> <span class="st">"2017 $ ostovoimakorjattuna"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Lähde: OECD, Tuottavuuslautakunta"</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"2017 $ ostovoimakorjattuna (log-asteikko)"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Lähde: Eurostat, OECD, Tuottavuuslautakunta"</span></span>
 <span>  <span class="op">)</span> </span></code></pre></div>
 </details><div class="cell-output-display">
 <div>

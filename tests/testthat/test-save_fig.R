@@ -14,7 +14,7 @@ test_that("the report's own defaults are what comes out of the box", {
   with_clean_defaults({
     d <- fig_defaults()
     expect_equal(d$width, 13.5)
-    expect_equal(d$height, 13.5)
+    expect_equal(d$height, 8.5)
     expect_equal(d$units, "cm")
     expect_equal(d$device, "png")
     expect_null(d$year)

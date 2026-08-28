@@ -1,13 +1,17 @@
-pandoc: 3.6.3
+pandoc: 3.8.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
+  board_2026: board_2026.html
   competitiveness: competitiveness.html
   ggdc: ggdc.html
   main: main.html
   main_en: main_en.html
+  main_oecd: main_oecd.html
   public: public.html
-last_built: 2026-05-26T06:16Z
+  public_oecd: public_oecd.html
+  tyotunnit: tyotunnit.html
+last_built: 2026-08-28T14:49Z
 urls:
   reference: https://tuottavuuslautakunta.github.io/fiprod/reference
   article: https://tuottavuuslautakunta.github.io/fiprod/articles

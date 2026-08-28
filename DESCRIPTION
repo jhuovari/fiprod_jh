@@ -1,6 +1,6 @@
 Package: fiprod
 Title: Finnish Productivity Board Tools
-Version: 0.0.2.9001
+Version: 0.1.0
 Authors@R: 
     person("Janne", "Huovari", , "janne.huovari@gov.fi", role = c("aut", "cre"))
 Description: Package for monitoring and managing productivity-related data

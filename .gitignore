@@ -11,3 +11,5 @@ VM
 /.quarto/
 vignettes/figures
 
+
+**/*.quarto_ipynb
