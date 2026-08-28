@@ -1,10 +1,10 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+# The site is built locally and the result committed under docs/, because the
+# articles need the data in inst/extdata, which is not in the repository. This
+# workflow therefore cannot render the articles and does not run by itself; it
+# is kept as a starting point for the day the data is available to CI.
 on:
-  push:
-    branches: [main, master]
-  release:
-    types: [published]
   workflow_dispatch:
 
 name: pkgdown.yaml
