@@ -46,6 +46,7 @@ update <- FALSE
 if (update){
 
   source("data-raw/get_oecd_pdb.R")
+  source("data-raw/get_oecd_lfs.R")
   source("data-raw/get_eurostat_na.R")
   source("data-raw/get_eurostat_gdp.R")
   source("data-raw/get_eurostat_ulc.R")
@@ -55,6 +56,8 @@ if (update){
 dat_oecd_pdb_main <- load_dat("dat_oecd_pdb_main")
 
 dat_oecd_pdb_ind <- load_dat("dat_oecd_pdb_ind")
+
+dat_oecd_wap <- load_dat("dat_oecd_wap")
 
 dat_eurostat_na_ind <- load_dat("dat_eurostat_na_ind")
 
@@ -260,37 +263,20 @@ dat_oecd_main_nac <-
   distinct(time, geo, measure, activity, unit_measure, price_base, .keep_all = TRUE) |>
   select(time, geo, measure, activity, unit_measure, price_base, values)
 
-# The main table, like the industry one, publishes labour input only as value
-# added per person (GVAEMP) and per hour (GVAHRS), so employment and hours are
-# backed out of the current price series in the same way. Without this the OECD
-# countries would have no EMP and no HRS in dat_gdp_main at all, while the
-# Eurostat ones do. The ratio does not depend on the currency, so the US series,
-# which are only published converted to PPP dollars, come out right as well.
-# The units follow from the division: OECD's value added is in millions, so
-# persons and hours are in millions too, and `oecd_scale_main` puts them on
-# Eurostat's thousands below.
-oecd_main_labour <-
-  dat_oecd_main_nac |>
-  filter(price_base == "V", measure %in% c("GVA", "GVAEMP", "GVAHRS")) |>
-  select(time, geo, activity, measure, values) |>
-  pivot_wider(names_from = measure, values_from = values) |>
-  transmute(time, geo, activity,
-            EMP = GVA / GVAEMP,
-            HRS = GVA / GVAHRS) |>
-  pivot_longer(c(EMP, HRS), names_to = "measure", values_to = "values") |>
-  filter(!is.na(values)) |>
-  mutate(unit_measure = if_else(measure == "EMP", "PS", "H"),
-         price_base = "_Z") |>
-  select(time, geo, measure, activity, unit_measure, price_base, values)
-
-# The hours OECD implies elsewhere: it publishes hours per head of population
-# (HRSPOP) and population itself, and the two multiplied together have to give
-# the same total hours as the division above. Hours are in millions and
-# population in thousands, hence the factor of a thousand. Only the whole
-# economy is covered, since HRSPOP has no business sector counterpart.
+# Employment and hours are not published for the whole economy and are backed
+# out of GVAEMP and GVAHRS already in data-raw/get_oecd_pdb.R, so they arrive
+# here like any other measure. They come out in OECD's own units - value added
+# is in millions, so persons and hours are too - and `oecd_scale_main` puts them
+# on Eurostat's thousands below.
+#
+# OECD's other route to the same hours is HRSPOP times POP: hours per head of
+# population multiplied by the population. Hours are in millions and population
+# in thousands, hence the factor of a thousand. The two have to agree; only the
+# whole economy is covered, since HRSPOP has no business sector counterpart.
 hrs_check <-
   inner_join(
-    filter(oecd_main_labour, measure == "HRS", activity == "_T") |>
+    dat_oecd_main_nac |>
+      filter(measure == "HRS", activity == "_T") |>
       select(time, geo, derived = values),
     dat_oecd_main_nac |>
       filter(measure %in% c("HRSPOP", "POP"), activity == "_T") |>
@@ -301,7 +287,10 @@ hrs_check <-
   ) |>
   filter(is.finite(derived), is.finite(published), published != 0)
 
-if (nrow(hrs_check)) {
+if (!nrow(hrs_check)) {
+  warning("No hours to check in the OECD main table. Has data-raw/get_oecd_pdb.R ",
+          "been run since it started deriving EMP and HRS?", call. = FALSE)
+} else {
   hrs_ratio <- stats::median(hrs_check$derived / hrs_check$published, na.rm = TRUE)
   if (abs(log10(hrs_ratio)) > 0.005) {
     warning("Hours derived as GVA / GVAHRS and hours as HRSPOP * POP differ ",
@@ -309,12 +298,6 @@ if (nrow(hrs_check)) {
             " in the OECD main table.", call. = FALSE)
   }
 }
-
-# Anything OECD does publish itself wins over the derived series.
-dat_oecd_main_nac <-
-  bind_rows(dat_oecd_main_nac, oecd_main_labour) |>
-  distinct(time, geo, measure, activity, unit_measure, price_base, .keep_all = TRUE) |>
-  arrange(geo, measure, activity, price_base, time)
 
 # Multipliers, as for the industry data: OECD counts persons and hours in
 # millions, Eurostat in thousands, so the OECD levels are multiplied by a
@@ -349,13 +332,70 @@ if (nrow(off_scale_main)) {
        ". Set `oecd_scale_main` in data-raw/data_main.R accordingly.")
 }
 
-dat_gdp_main_nac <-
+dat_gdp_main_nac_0 <-
   combine_geo_sources(
     eurostat = dat_eurostat_main,
     oecd     = mutate(dat_oecd_main_nac,
                       values = values * unname(oecd_scale_main[measure])),
     geos     = list(eurostat = geos_eurostat)
   )
+
+## Working age population -----------------------------------------------------
+#
+# The 15 to 64 year olds, from the OECD labour force survey database
+# (data-raw/get_oecd_lfs.R). Neither productivity database carries it, so it is
+# not part of the source combination above: it is added on top, for the
+# countries the LFS query covers, and marked with a source of its own.
+#
+# That query drops the table's unit multiplier, so nothing in the data says
+# whether a value counts persons or thousands of persons. The share of 15 to 64
+# year olds in the population is between 55 and 75 per cent in every OECD
+# country, which is far enough from a factor of ten to pin the multiplier down.
+wap_0 <-
+  dat_oecd_wap |>
+  mutate(across(c(geo, measure, activity, age), as.character)) |>
+  filter(measure == "WAP", activity == "_T", age == "Y15T64") |>
+  select(time, geo, values)
+
+wap_share <-
+  wap_0 |>
+  inner_join(filter(dat_gdp_main_nac_0, measure == "POP", activity == "_T") |>
+               select(time, geo, pop = values),
+             by = c("time", "geo")) |>
+  filter(is.finite(values), is.finite(pop), pop != 0) |>
+  summarise(share = stats::median(values / pop)) |>
+  pull(share)
+
+# a power of ten, so that the share lands where a working age share belongs
+wap_mult <- 10^round(log10(0.65 / wap_share))
+
+message("Working age population scaled by ", format(wap_mult, scientific = FALSE),
+        "; share of the population ", signif(100 * wap_share * wap_mult, 3), " %.")
+
+if (!is.finite(wap_share) ||
+    !dplyr::between(wap_share * wap_mult, 0.55, 0.75)) {
+  stop("The working age population is ", signif(100 * wap_share * wap_mult, 3),
+       " % of the population after scaling by ",
+       format(wap_mult, scientific = FALSE),
+       ", which is not a working age share. Check the units of dat_oecd_wap ",
+       "against POP in data-raw/data_main.R.")
+}
+
+dat_wap_main <-
+  wap_0 |>
+  transmute(time, geo,
+            measure = "WAP", activity = "_T",
+            unit_measure = "PS", price_base = "_Z",
+            values = values * wap_mult,
+            source = "oecd_lfs")
+
+no_wap <- setdiff(unique(dat_gdp_main_nac_0$geo), unique(dat_wap_main$geo))
+if (length(no_wap)) {
+  message("No working age population, outside the OECD LFS query: ",
+          paste(sort(no_wap), collapse = ", "), ".")
+}
+
+dat_gdp_main_nac <- bind_rows(dat_gdp_main_nac_0, dat_wap_main)
 
 # PPP conversion. Eurostat has no PPP series in USD, so OECD's own conversion
 # factors are used: national currency per PPP dollar, read off the two versions

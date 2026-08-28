@@ -60,7 +60,10 @@ erikseen mutta ei niiden suhdetta; OECD julkaisee suhteen mutta ei työtunteja.
 Suunta on siis päinvastainen: Eurostat-mailla tunnit ovat lähtötieto ja suhde
 lasketaan, OECD-mailla suhde on lähtötieto ja tunnit lasketaan takaisin.
 
-Sen että OECD:n päätaulussa ei ole työtunteja näkee suoraan aineistosta:
+Paketin tauluissa `HRS` on mukana molemmilla, mutta OECD-mailla se on paketin
+itse laskema: `data-raw/get_oecd_pdb.R` jakaa `GVA / GVAHRS` heti haun jälkeen
+ja tallentaa tuloksen `HRS`-mittariksi. Itse tietokannassa työtunteja ei ole,
+vaikka ne haussa pyydetään.
 
 ```{r}
 #| label: measures
@@ -75,8 +78,8 @@ bind_rows(
   knitr::kable(caption = "Havaintojen määrä mittareittain")
 ```
 
-Yhdistetyssä `dat_gdp_main`-taulussa `HRS` on kaikilla mailla, mutta se on eri
-tavalla tehty tieto: Eurostat-mailla tilinpidon tuntisarja, OECD-mailla
+Yhdistetyssä `dat_gdp_main`-taulussa `HRS` on siis kaikilla mailla, mutta se on
+eri tavalla tehty tieto: Eurostat-mailla tilinpidon tuntisarja, OECD-mailla
 takaisinlaskettu `GVA / GVAHRS`.
 
 Näin ollen `GVAHRS` on kahdessa aineistossa sama nimi kahdelle eri asialle. Ne
@@ -116,20 +119,18 @@ Lähteet:
 OECD:n käyttämät työtunnit saa esiin jakolaskulla `GVA / GVAHRS`. Se palauttaa
 täsmälleen ne tunnit, joilla OECD on tuottavuutensa laskenut. Tunnit ovat
 valuuttamuunnoksesta riippumattomat, koska osoittaja ja nimittäjä jaetaan samalla
-ostovoimapariteetilla.
+ostovoimapariteetilla — siksi jakolasku onnistuu myös niille maille, joiden
+sarjat OECD julkaisee vain ostovoimakorjattuina. Paketti tekee jaon jo haun
+yhteydessä, joten tunnit löytyvät suoraan `HRS`-mittarina.
 
 ```{r}
 #| label: hours
 
 oecd_hrs <-
   chr(dat_oecd_pdb_main) |>
-  filter(activity == act, conversion_type == "PPP", price_base == "LR",
-         (measure == "GVA"    & unit_measure == "USD_PPP") |
-         (measure == "GVAHRS" & unit_measure == "USD_PPP_H")) |>
-  select(time, geo, measure, values) |>
-  pivot_wider(names_from = measure, values_from = values) |>
-  filter(if_all(c(GVA, GVAHRS), is.finite), GVAHRS != 0) |>
-  transmute(time, geo, hrs_oecd = GVA / GVAHRS)
+  filter(measure == "HRS", activity == act) |>
+  filter(is.finite(values)) |>
+  select(time, geo, hrs_oecd = values)
 
 hrs_cmp <-
   chr(dat_eurostat_na_ind) |>
