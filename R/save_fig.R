@@ -10,7 +10,7 @@
   dir    = "figures",
   year   = NULL,       # NULL: the current year
   width  = 13.5,
-  height = 13.5,
+  height = 8.5,
   units  = "cm",
   dpi    = 300,
   device = "png"
@@ -126,7 +126,8 @@ save_fig <- function(plot, name, ...) {
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
 
   path <- file.path(dir, paste0(name, ".", opts$device))
-  ggplot2::ggsave(path, plot = plot,
+  ggplot2::ggsave(path,
+                  plot = plot + ggplot2::theme(plot.margin = ggplot2::margin(2,2,2,2)),
                   width = opts$width, height = opts$height, units = opts$units,
                   dpi = opts$dpi, device = opts$device)
 

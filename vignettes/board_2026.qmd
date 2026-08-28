@@ -52,7 +52,7 @@ set_gg(theme_fpb())
 y_log_breaks <- scales::breaks_pretty(n = 8)
 
 # Vintagetiedot eivät päivity ellei datatiedostoja ensi poisteta.
-vintage_year <- NULL
+vintage_year <- 2026
 
 # Julkaisuvuosi. Kuviot tallentuvat kansioon figures/<vuosi>/, koko 13,5 x 13,5
 # cm. Muut tallennuksen oletukset (koko, tarkkuus, tiedostomuoto, kansio) ovat
@@ -113,7 +113,7 @@ sub_ind <- paste0("Indeksi, keskiarvo ", min(mean_range), "–", max(mean_range)
 
 ## BKT per capita tasoero
 
-**BKT suhteessa väestöön.** Vuoden 2020 $ hinnoin ostovoimakorjattuna
+BKT suhteessa väestöön. Vuoden 2020 $ hinnoin ostovoimakorjattuna
 (log-asteikko). Lähde: Eurostat, OECD, Tuottavuuslautakunta.
 
 ```{r}
@@ -150,14 +150,14 @@ käytettävissä oleva kerroin kuljetetaan eteenpäin.
 
 ## BKT per capita hajotelma 
 
-**Työn tuottavuus ja työtunnit.** BKT työtuntia kohden vuoden 2020 $ hinnoin
+Työn tuottavuus ja työtunnit. BKT työtuntia kohden vuoden 2020 $ hinnoin
 ostovoimakorjattuna ja työtunnit henkeä kohden (log-asteikko). Lähde: Eurostat,
 OECD, Tuottavuuslautakunta.
 
 ```{r}
 #| label: fig-bkt-per-capita-hajotelma
 
-p <- dat_gdp_main |>
+pdat <- dat_gdp_main |>
   filter(time >= "1995-01-01") |> 
   filter_recode(
     geo = geos,
@@ -172,16 +172,29 @@ p <- dat_gdp_main |>
   mutate(
     time = time,
     geo = geo,
-    "BKT per työtunnit" = GDP / HRS,
-    "Työtunnit per väestö" = HRS / POP,
+    "BKT per työtunnit, $" = 1000 * GDP / HRS,
+    "Työtunnit per väestö, h" = HRS / POP,
     .keep = "none") |> 
-  pivot_longer(!c("time", "geo"), names_to = "measure", values_to = "values") |> 
-  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  pivot_longer(!c("time", "geo"), names_to = "measure", values_to = "values")
+
+# skaalat oikeaksi vaikutuksen suhteen
+rng <- pdat |>
+  summarise(lo = min(values, na.rm = TRUE), hi = max(values, na.rm = TRUE), .by = measure) |>
+  mutate(dec = max(log10(hi / lo)),          # suurin jänne dekadeina
+         mid = sqrt(lo * hi),                # geometrinen keskikohta
+         lo  = mid / 10^(dec / 2),
+         hi  = mid * 10^(dec / 2)) |>
+  select(measure, lo, hi) |>
+  pivot_longer(c(lo, hi), values_to = "values") |>
+  mutate(time = min(pdat$time))
+
+p <- ggplot(pdat, aes(time, values, colour = geo, linewidth = geo)) +
+  geom_blank(data = rng, aes(time, values), inherit.aes = FALSE) +
   facet_wrap(~measure, scales = "free") +
+  scale_y_log10(breaks = y_log_breaks) +
   geom_line() +
   scale_colour_manual(values = geos_colour) +
   scale_linewidth_manual(values = geos_width) +
-  scale_y_log10(breaks = y_log_breaks) +
   guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
   the_title_blank("xyl")
 
@@ -196,7 +209,7 @@ kasvuvauhteja; ks. [Työtunnit: Eurostat ja OECD](tyotunnit.qmd).
 
 ## Työn tuottavuuden kasvu yrityssektorilla
 
-**Työn tuottavuus, arvonlisä / työtunnit.** Yrityssektori, indeksi 2007 = 100
+Työn tuottavuus, arvonlisä / työtunnit. Yrityssektori, indeksi 2007 = 100
 (log-asteikko). Lähde: Eurostat, OECD, Tuottavuuslautakunta.
 
 ```{r}
@@ -235,27 +248,27 @@ Sarjat ovat omassa valuutassa, joten kuviosta luetaan kasvu, ei tasoeroa.
 
 ## Työn tuottavuuden kasvu teollisuudessa ja palveluissa
 
-**Työn tuottavuus toimialoittain, arvonlisä / työtunnit.** Indeksi 2007 = 100
+Työn tuottavuus toimialoittain, arvonlisä / työtunnit. Indeksi 2007 = 100
 (log-asteikko). Lähde: Eurostat, OECD, Tuottavuuslautakunta.
 
 ```{r}
 #| label: fig-tuottavuus-toimialat
 
 p <- dat_gva_ind_comb|>
-  filter(time >= "1995-01-01") |> 
+  filter(time >= "2000-01-01") |> 
   filter_recode(
     measure = c("GVAHRS"),
     activity = c("Teollisuus" = "BTE", "Rakentaminen" = "F","Yksityiset palvelut" = "GTNXL"),
     vars = c("fp_2020_ppp17")
   ) |> 
   mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
-  # filter(geo != "DK") |> 
+  filter(geo != "DK") |>
   filter_recode(
     geo = geos
   ) |> 
 
   ggplot(aes(time, values, colour = geo, linewidth = geo)) +
-  scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
+  scale_y_log10(limits = c(60, 150), breaks = y_log_breaks) +
   facet_wrap(~ activity) +
   geom_line() +
   scale_colour_manual(values = geos_colour) +
@@ -275,7 +288,7 @@ koskee OECD:stä tulevia maita; ks. [Talouskasvu ja tuottavuus](main.qmd).
 
 ## Yksikkökustannusindikaattorit
 
-**Suomen suhteellinen yksikkötyökustannus eri määritelmillä.** `r sub_ind`.
+Suomen suhteellinen yksikkötyökustannus eri määritelmillä. `r sub_ind`.
 Lähde: Eurostat, Tuottavuuslautakunta.
 
 ```{r}
@@ -305,7 +318,7 @@ jatkettuun tietoon (`extended`-sarake).
 
 ## ULC hajotelma
 
-**Suhteellisen yksikkötyökustannuksen osatekijät.** `r sub_ind`. Lähde: Eurostat,
+Suhteellisen yksikkötyökustannuksen osatekijät. `r sub_ind`. Lähde: Eurostat,
 Tuottavuuslautakunta.
 
 ```{r}
