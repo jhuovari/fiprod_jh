@@ -9,4 +9,6 @@ inst/doc
 inst/extdata
 VM
 /.quarto/
-figures/
+
+# save_fig() kirjoittaa julkaisuvuoden mukaiseen kansioon
+figures/[0-9][0-9][0-9][0-9]/

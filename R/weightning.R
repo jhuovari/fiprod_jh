@@ -228,6 +228,8 @@ weight_index2 <- function(x, geo, time, geos, weight_df,
 #' @param w_df A weigth data.frame
 #' @param check_geos A locigal to check if all geos are in w_df
 #' @param mean_type A meant type to calculate "geom" for geometric and "arit" for arithmetic
+#'
+#' @keywords internal
 
 weight_function <- function(one_geo, x, geo, w_df, check_geos, mean_type){
 

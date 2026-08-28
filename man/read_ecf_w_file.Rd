@@ -9,3 +9,4 @@ read_ecf_w_file(file, zipfile = zipfile)
 \description{
 read-function
 }
+\keyword{internal}

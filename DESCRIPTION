@@ -26,7 +26,6 @@ Imports:
     eurostat,
     forcats,
     nanoparquet,
-    pkgdown,
     plotly,
     pxwebtools (>= 0.1.5),
     rlang,
@@ -44,4 +43,6 @@ Depends:
     R (>= 3.5)
 LazyData: true
 URL: https://tuottavuuslautakunta.github.io/fiprod/
+BugReports: https://github.com/tuottavuuslautakunta/fiprod/issues
+Config/Needs/website: pkgdown
 Config/roxygen2/version: 8.0.0

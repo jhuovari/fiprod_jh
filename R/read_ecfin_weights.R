@@ -23,6 +23,7 @@ read_ecfin_weights <- function(zipfile, file_pre){
 
 #' read-function
 #'
+#' @keywords internal
 read_ecf_w_file <- function(file, zipfile = zipfile){
   w_file <- unzip(zipfile, file, junkpaths = TRUE, exdir = tempdir())
   y <- read.csv(w_file, check.names = FALSE) %>%
