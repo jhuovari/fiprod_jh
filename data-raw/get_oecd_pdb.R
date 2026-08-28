@@ -16,7 +16,7 @@ pdb_main_key <- oecd_make_filter(
 dat_oecd_pdb_main_0 <- get_dataset(
   dataset = pdb_dataset, filter = pdb_main_key)
 
-dat_oecd_pdb_main <-
+dat_oecd_pdb_main_1 <-
   dat_oecd_pdb_main_0 |>
   oecd_clean_data(drop_vars = c("UNIT_MULT", "OBS_STATUS"),
                   vars = c(geo = "REF_AREA",
@@ -26,8 +26,45 @@ dat_oecd_pdb_main <-
                            "price_base"     = "PRICE_BASE",
                            "conversion_type"= "CONVERSION_TYPE")) |>
   mutate(geo = as_factor(countrycode(geo, "iso3c", "eurostat", nomatch = NULL))) |>
+  mutate(across(c(measure, activity, unit_measure, price_base, conversion_type),
+                as.character))
+
+# The database gives labour input for the whole economy only as ratios: value
+# added per person (GVAEMP) and per hour (GVAHRS). The levels themselves are
+# asked for above but not published, so they are backed out of the current price
+# series here, which puts the table in the same shape as the Eurostat one.
+#
+# The division is done inside one currency conversion and gives the same head
+# count and the same hours in either, so the result is stored once, as a
+# quantity rather than a converted value: unit PS or H, no price base and no
+# conversion type. National currency is preferred where it exists; the countries
+# OECD publishes in PPP dollars only (the US) are covered by the PPP series.
+pdb_main_labour <-
+  dat_oecd_pdb_main_1 |>
+  filter(price_base == "V", measure %in% c("GVA", "GVAEMP", "GVAHRS")) |>
+  select(time, geo, activity, conversion_type, measure, values) |>
+  pivot_wider(names_from = measure, values_from = values) |>
+  transmute(time, geo, activity, conversion_type,
+            EMP = GVA / GVAEMP,
+            HRS = GVA / GVAHRS) |>
+  pivot_longer(c(EMP, HRS), names_to = "measure", values_to = "values") |>
+  filter(is.finite(values)) |>
+  arrange(match(conversion_type, c("_Z", "PPP"))) |>
+  distinct(time, geo, activity, measure, .keep_all = TRUE) |>
+  transmute(time, geo, measure, activity,
+            unit_measure = if_else(measure == "EMP", "PS", "H"),
+            price_base = "_Z", conversion_type = "_Z", values)
+
+# Should the database start publishing the levels, the published rows win.
+dat_oecd_pdb_main <-
+  bind_rows(dat_oecd_pdb_main_1, pdb_main_labour) |>
+  distinct(time, geo, measure, activity, unit_measure, price_base,
+           conversion_type, .keep_all = TRUE) |>
+  mutate(across(c(measure, activity, unit_measure, price_base, conversion_type),
+                as_factor)) |>
   unite("var_id", measure, unit_measure, price_base, conversion_type, sep = "-", remove = FALSE) |>
-  mutate(var_id = as_factor(var_id))
+  mutate(var_id = as_factor(var_id)) |>
+  arrange(geo, measure, activity, price_base, conversion_type, time)
 
 save_dat(dat_oecd_pdb_main, overwrite = TRUE)
 
