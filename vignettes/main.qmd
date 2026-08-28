@@ -470,19 +470,29 @@ Työn tuottavuudelle OECD:n tietokannassa on arvonlisäys per työtunnit -muuttu
 
 Selkeästi tasoero tulee työn tuottavuudesta, ei työtunneista. Työn tuottavuuden taso ero Yhdysvaltoihin on kuitenkin paljon suurempi kuin BKT per capita, vaikka työntunnit per capita on melkein sama. Miksi näin?
 
+
+
 ```{r}
 
 dat_gdp_main |> 
   filter(time >= "1995-01-01") |> 
   filter_recode(
     geo = geos,
-    measure = c("GDPPOP", "Työn tuottavuus" = "GVAHRS", "Tunnit per capita" = "HRSPOP"),
+    measure = c("GDP", "HRS", "HRSPOP", "EMP", "POP", "WAP"),
     activity = c("Koko talous" = "_T"),
-    unit_measure = c("USD_PPP_PS", "USD_PPP_H", "H_PS"),
+    unit_measure = c("USD_PPP", "H", "H_PS", "PS"),
     price_base = c("LR", "_Z"),        
     conversion_type = c("PPP", "_Z")
   ) |> 
-  select(-unit_measure) |> 
+  select(time, geo, measure, values) |> 
+  pivot_wider(names_from = "measure", values_from = "values") |> 
+  mutate(
+    time = time,
+    geo = geo,
+    "BKT per työtunnit" = GDP / HRS,
+    "TYötunnit per väestö" = HRS / POP,
+    .keep = "none") |> 
+  pivot_longer(!c("time", "geo"), names_to = "measure", values_to = "values") |> 
   ggplot(aes(time, values, colour = geo, linewidth = geo)) +
   facet_wrap(~measure, scales = "free") +
   geom_line() +

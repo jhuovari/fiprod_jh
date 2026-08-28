@@ -26,12 +26,15 @@ library(pttdatahaku)
 
 set_gg(theme_fpb())
 
+
 y_log_breaks <- scales::breaks_pretty(n = 8)
 
+# Vintagetiedot eivät päivity ellei datatiedostoja ensi poisteta.
+vintage_year <- NULL
 
-dat_gdp_main <- load_dat(filename = "dat_gdp_main", vintage = 2026)
+dat_gdp_main <- load_dat("dat_gdp_main", vintage = vintage_year)
 
-dat_gva_ind_comb <- load_dat("dat_gva_ind_comb")
+dat_gva_ind_comb <- load_dat("dat_gva_ind_comb", vintage = vintage_year)
 
 geos <- rev(c(
   "Suomi"         = "FI",
@@ -49,4 +52,216 @@ geos_colour <- set_names(c("grey80", rev(ggcustom_pal(length(geos) -1, "fpb"))),
 
 # geos_name <- set_names(names(geos), geos)
 
+# Kustannuskilpailukyky
+
+dat_ulc_comp     <- load_dat("dat_ulc_comp", vintage = vintage_year)
+dat_oecd_pdb_ulc <- load_dat("dat_oecd_pdb_ulc", vintage = vintage_year)
+
+start_year <- 2000
+
+# Indeksin vertailujakso: keskiarvo 2000 - viimeisin = 100, kuten raportissa
+mean_range <- start_year:lubridate::year(max(dat_ulc_comp$time))
+
+
+
+# Poimii yhden tai useamman indikaattorin leveään muotoon ja indeksoi uudelleen
+pick <- function(vars_keep, col = "rel", geo_keep = "FI") {
+  dat_ulc_comp |>
+    filter(
+      geo %in% geo_keep, 
+      vars %in% vars_keep,
+      lubridate::year(time) >= start_year) |>
+    select(time, geo, vars, extended, values = all_of(col)) |>
+    mutate(values = rebase_index(values, time, mean_range), .by = c(geo, vars)) |>
+    mutate(vars = fct_recode(factor(vars, levels = vars_keep), !!!vars_keep))
+}
+
+sub_ind <- paste0("Indeksi, keskiarvo ", min(mean_range), "–", max(mean_range), " = 100")
+
+```
+
+# Tuottavuuskehitys
+
+## BKT per capita tasoero
+
+```{r}
+
+dat_gdp_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    geo = geos,
+    measure = c("GDPPOP"),
+    activity = c("Koko talous" = "_T"),
+    price_base = c("LR"),        # 
+    conversion_type = c("PPP")
+  ) |> 
+  # mutate(geo2 = suppressWarnings(fct_relevel(geo, geos, after = Inf))) |>
+  # mutate(geo = fct_other(geo, keep = geos, other_level = "Other")) |> 
+  # filter_recode(geo = geos) |> 
+  select(-unit_measure) |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "BKT suhteessa väestöön",
+    subtitle = "Vuoden 2020 $ hinnoin ostovoimakorjattuna (log-asteikko)",
+    caption = "Lähde: Eurostat, OECD, Tuottavuuslautakunta"
+  )
+
+```
+
+
+## BKT per capita hajotelma 
+
+```{r}
+
+dat_gdp_main |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    geo = geos,
+    measure = c("GDP", "HRS", "HRSPOP", "EMP", "POP", "WAP"),
+    activity = c("Koko talous" = "_T"),
+    unit_measure = c("USD_PPP", "H", "H_PS", "PS"),
+    price_base = c("LR", "_Z"),        
+    conversion_type = c("PPP", "_Z")
+  ) |> 
+  select(time, geo, measure, values) |> 
+  pivot_wider(names_from = "measure", values_from = "values") |> 
+  mutate(
+    time = time,
+    geo = geo,
+    "BKT per työtunnit" = GDP / HRS,
+    "TYötunnit per väestö" = HRS / POP,
+    .keep = "none") |> 
+  pivot_longer(!c("time", "geo"), names_to = "measure", values_to = "values") |> 
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  facet_wrap(~measure, scales = "free") +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Työn tuottavuus ja työtunnit",
+    subtitle = "Indeksi, 2007 = 100 (log-asteikko)",
+    caption = "Lähde: Eurostat, OECD, Tuottavuuslautakunta"
+  )
+
+```
+
+
+## Työn tuottavuuden kasvu yrityssektorilla
+
+```{r}
+
+dat_gva_ind_comb |> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Yrityssektori" = "BTNXL"),
+    vars = c("fp_2020_lc")
+  ) |> 
+  mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  # filter(geo != "DK") |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  # facet_wrap(~ activity, nrow = 1) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  scale_y_log10(breaks = y_log_breaks) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Työn tuottavuus, arvonlisä / työtunnit",
+    subtitle = "Indeksi, 2007 = 100 (log-asteikko)",
+    caption = "Lähde: Eurostat, OECD, Tuottavuuslautakunta"
+  )
+
+```
+
+
+## Työn tuottavuuden kasvu teollisuudessa ja palveluissa
+
+```{r}
+
+dat_gva_ind_comb|> 
+  filter(time >= "1995-01-01") |> 
+  filter_recode(
+    measure = c("GVAHRS"),
+    activity = c("Teollisuus" = "BTE", "Rakentaminen" = "F","Yksityiset palvelut" = "GTNXL"),
+    vars = c("fp_2020_ppp17")
+  ) |> 
+  mutate(values = rebase(values, time, baseyear = 2007), .by = where(is.factor)) |> 
+  # filter(geo != "DK") |> 
+  filter_recode(
+    geo = geos
+  ) |> 
+
+  ggplot(aes(time, values, colour = geo, linewidth = geo)) +
+  scale_y_log10(limits = c(50, 150), breaks = y_log_breaks) +
+  facet_wrap(~ activity) +
+  geom_line() +
+  scale_colour_manual(values = geos_colour) +
+  scale_linewidth_manual(values = geos_width) +
+  guides(colour = guide_legend(reverse = TRUE), linewidth = guide_legend(reverse = TRUE)) +
+  the_title_blank("xyl") +
+  labs(
+    title = "Työn tuottavuus yrityssektorilla, arvonlisä / työtunnit",
+    subtitle = "Indeksi, 2007 = 100 (log-asteikko)",
+    caption = "Lähde: Eurostat, OECD, Tuottavuuslautakunta"
+  )
+
+```
+
+
+# Kustannuskilpailukyvyn kehitys
+
+## Yksikkökustannusindikaattorit
+
+```{r}
+#| label: fig-definitions
+
+pick(c("Nimellinen, omassa valuutassa" = "nulc_aper",
+       "Nimellinen, samassa valuutassa" = "nulc_aper_eur",
+       "Nimellinen, vaihtosuhdekorjattu" = "nulc_aper_eur_atot",
+       "Reaalinen" = "rulc_aper")) |>
+  ggplot(aes(time, values, colour = vars)) +
+  geom_hline(yintercept = 100, linewidth = 0.3) +
+  geom_line() +
+  the_title_blank("xl") +
+  the_legend_bot() +
+  guides(colour = guide_legend(nrow = 2)) +
+  labs(title = "Suomen suhteellinen yksikkötyökustannus eri määritelmillä",
+       subtitle = sub_ind, y = NULL,
+       caption = "Lähde: Eurostat, Tuottavuuslautakunta")
+
+```
+
+
+## ULC hajotelma
+
+```{r}
+#| label: fig-decomp
+
+pick(c("Tuottavuus" = "lp_ind",
+       "Palkansaajakorvaukset" = "d1_per_ind",
+       "Valuuttakurssi" = "exch_eur_ind")) |>
+  mutate(values = if_else(vars == "Valuuttakurssi", 100^2 / values, values)) |>
+  ggplot(aes(time, values, colour = vars)) +
+  geom_hline(yintercept = 100, linewidth = 0.3) +
+  geom_line() +
+  the_title_blank("xl") +
+  the_legend_bot() +
+  labs(title = "Suhteellisen yksikkötyökustannuksen osatekijät",
+       subtitle = sub_ind, y = NULL,
+       caption = "Lähde: Eurostat, Tuottavuuslautakunta")
 ```

@@ -354,7 +354,7 @@ dat_gdp_main_nac_0 <-
 wap_0 <-
   dat_oecd_wap |>
   mutate(across(c(geo, measure, activity, age), as.character)) |>
-  filter(measure == "WAP", activity == "_T", age == "Y15T64") |>
+  filter(measure == "WAP", activity == "_Z", age == "Y15T64") |>
   select(time, geo, values)
 
 wap_share <-
@@ -758,3 +758,4 @@ ulce_check <-
 
 message("nulc_aper vs OECD ULCE:")
 print(ulce_check)
+
