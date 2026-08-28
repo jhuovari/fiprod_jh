@@ -22,3 +22,4 @@ weight_function(one_geo, x, geo, w_df, check_geos, mean_type)
 \description{
 Weight function for weight_index
 }
+\keyword{internal}
